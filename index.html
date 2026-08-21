@@ -147,8 +147,8 @@
     <div id="admin-tab-assign-game" style="display:none;">
       <h3>2. Criar Jogo (PIN) para uma Turma</h3>
       <div class="input-group">
-        <label>Defina o PIN do Jogo (ex: 1234, TURMA1):</label>
-        <input type="text" id="new-pin" placeholder="Ex: 1234" style="text-transform: uppercase;">
+        <label>Defina o PIN do Jogo (ex: 1234, AGO1):</label>
+        <input type="text" id="new-pin" placeholder="Ex: AGO1" style="text-transform: uppercase;">
       </div>
       <div class="input-group">
         <label>Selecione a Turma:</label>
@@ -181,7 +181,7 @@
       <h3>Gerenciar Turmas</h3>
       <div class="input-group">
         <label>Nome da Nova Turma:</label>
-        <input type="text" id="class-name-input" placeholder="Ex: 1º Ano A, 2º Ano B">
+        <input type="text" id="class-name-input" placeholder="Ex: 1º Ano A, Infantil V">
       </div>
       <button class="btn btn-success" onclick="addNewClass()">Adicionar Turma</button>
 
@@ -267,7 +267,7 @@
 
 <script>
   // BANCO DE DADOS LOCAL (LocalStorage)
-  let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["1º Ano A", "1º Ano B", "2º Ano A"];
+  let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["1º Ano A", "1º Ano B", "Infantil V"];
   let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phase_bank")) || []; 
   let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {}; 
   let dbRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
@@ -309,20 +309,23 @@
 
   // --- ÁREA DO ALUNO ---
   function startStudentGame() {
-    const pin = document.getElementById("player-pin").value.trim().toUpperCase();
+    const inputPin = document.getElementById("player-pin").value.trim().toUpperCase();
     const name = document.getElementById("player-name").value.trim();
 
-    if (!pin || !name) {
+    if (!inputPin || !name) {
       alert("Por favor, digite o PIN do jogo e o seu Nome!");
       return;
     }
 
-    if (!dbGames[pin] || !dbGames[pin].phaseIds || dbGames[pin].phaseIds.length === 0) {
+    // Busca o PIN ignorando maiúsculas e minúsculas
+    const matchedPinKey = Object.keys(dbGames).find(key => key.toUpperCase() === inputPin);
+
+    if (!matchedPinKey || !dbGames[matchedPinKey] || !dbGames[matchedPinKey].phaseIds || dbGames[matchedPinKey].phaseIds.length === 0) {
       alert("PIN não encontrado ou este jogo não possui fases associadas!");
       return;
     }
 
-    const gameData = dbGames[pin];
+    const gameData = dbGames[matchedPinKey];
     
     const activePhases = gameData.phaseIds
       .map(id => dbPhaseBank.find(p => p.id === id))
@@ -333,7 +336,7 @@
       return;
     }
 
-    currentStudent = { name, pin, className: gameData.className || "Não Informada" };
+    currentStudent = { name, pin: matchedPinKey.toUpperCase(), className: gameData.className || "Não Informada" };
     currentGame = activePhases;
     currentPhaseIndex = 0;
     totalScore = 0;
@@ -677,7 +680,7 @@
 
     const pins = Object.keys(dbGames);
     if (pins.length === 0) {
-      gamesContainer.innerHTML = "<p>Nenhum jogo/PIN configurado para turmas no momento.</p>";
+      gamesContainer.innerHTML = "<p>Nenum jogo/PIN configurado para turmas no momento.</p>";
     } else {
       pins.forEach(pin => {
         const g = dbGames[pin];
@@ -690,7 +693,7 @@
           <div class="phase-card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
               <div>
-                <h4 style="margin:0;">PIN: ${pin} | Turma: ${g.className}</h4>
+                <h4 style="margin:0;">PIN: ${pin.toUpperCase()} | Turma: ${g.className}</h4>
                 <p style="font-size:14px; color:#555; margin-top:5px;"><strong>Fases Incluídas:</strong> ${phaseNames}</p>
               </div>
               <div>
@@ -885,7 +888,7 @@
     const currentSelectedFilter = filterSelect.value;
     filterSelect.innerHTML = '<option value="ALL">Todos os PINs</option>';
     pins.forEach(pin => {
-      filterSelect.innerHTML += `<option value="${pin}">PIN: ${pin} (${dbGames[pin].className})</option>`;
+      filterSelect.innerHTML += `<option value="${pin.toUpperCase()}">PIN: ${pin.toUpperCase()} (${dbGames[pin].className})</option>`;
     });
     filterSelect.value = currentSelectedFilter || "ALL";
 
@@ -895,7 +898,7 @@
 
     let filteredRankings = dbRankings;
     if (selectedPin && selectedPin !== "ALL") {
-      filteredRankings = dbRankings.filter(r => r.pin === selectedPin);
+      filteredRankings = dbRankings.filter(r => r.pin.toUpperCase() === selectedPin.toUpperCase());
     }
 
     // Ordenar do maior para o menor resultado
@@ -926,7 +929,7 @@
           <td>${posDisplay}</td>
           <td><strong>${r.student}</strong></td>
           <td>${r.className}</td>
-          <td><span class="badge">${r.pin}</span></td>
+          <td><span class="badge">${r.pin.toUpperCase()}</span></td>
           <td><strong style="color:#2ecc71;">${r.score}</strong> pts</td>
           <td style="font-size:13px; color:#666;">${r.date}</td>
         </tr>
