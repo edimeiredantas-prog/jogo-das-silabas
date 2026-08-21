@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plataforma - Jogo das Sílabas</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+    body { background-color: #f4f7f6; color: #333; padding: 20px; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 1050px; background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    
+    /* Telas */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* Estilos Gerais */
+    h1, h2, h3, h4 { text-align: center; color: #2c3e50; margin-bottom: 15px; }
+    .btn { background: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; margin-top: 10px; }
+    .btn:hover { background: #2980b9; }
+    .btn-success { background: #2ecc71; }
+    .btn-success:hover { background: #27ae60; }
+    .btn-danger { background: #e74c3c; }
+    .btn-danger:hover { background: #c0392b; }
+    .btn-secondary { background: #95a5a6; }
+    .btn-small { width: auto; padding: 6px 12px; font-size: 14px; margin-top: 0; display: inline-block; }
+    .btn-warning { background: #f39c12; }
+    .btn-warning:hover { background: #d68910; }
+    .input-group { margin-bottom: 15px; }
+    .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+    .input-group input, .input-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+
+    /* LAYOUT DO JOGO (COLUNA DE SÍLABAS AMPLIADA PARA 300PX) */
+    .game-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; margin-top: 20px; }
+    .words-column { display: flex; flex-direction: column; gap: 15px; }
+    
+    .word-row { display: grid; grid-template-columns: 90px 1fr; gap: 15px; align-items: center; background: #fafafa; padding: 12px; border-radius: 8px; border: 1px solid #ddd; }
+    .img-box { width: 85px; height: 85px; border: 2px solid #333; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; }
+    .img-box img { width: 100%; height: 100%; object-fit: cover; }
+    
+    .slots-container { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .slot { width: 60px; height: 60px; background: white; border: 2px solid #333; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; cursor: pointer; user-select: none; position: relative; transition: all 0.2s ease; }
+    
+    .slot.selected { border: 4px solid #f39c12; background-color: #fef9e7; }
+    .slot.filled { background-color: #ebf5fb; border-color: #3498db; }
+    
+    /* Estilos pós-finalização */
+    .slot.correct { background-color: #d4edda !important; border-color: #28a745 !important; color: #155724; cursor: default; }
+    .slot.correct::after { content: "✓"; position: absolute; top: 2px; right: 4px; font-size: 12px; color: #28a745; font-weight: bold; }
+    .slot.wrong { background-color: #f8d7da !important; border-color: #dc3545 !important; color: #721c24; cursor: default; }
+    .slot.wrong::after { content: "✕"; position: absolute; top: 2px; right: 4px; font-size: 12px; color: #dc3545; font-weight: bold; }
+
+    /* PAINEL LATERAL DE SÍLABAS */
+    .sidebar-options { background: #f8f9fa; border: 2px dashed #bdc3c7; border-radius: 8px; padding: 12px 10px; text-align: center; }
+    .sidebar-options h3 { font-size: 16px; margin-bottom: 12px; color: #2c3e50; }
+    .options-grid { display: grid; grid-template-columns: repeat(4, 55px); gap: 8px; justify-content: center; min-height: 150px; }
+    
+    .option { width: 55px; height: 55px; background: white; border: 2px solid #333; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: bold; cursor: pointer; user-select: none; transition: all 0.2s ease; }
+    .option:hover { background-color: #ebf5fb; transform: translateY(-2px); }
+    .option.hidden { display: none !important; }
+
+    /* ADMIN & RANKING */
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+    th { background-color: #34495e; color: white; }
+    .badge { padding: 6px 12px; border-radius: 4px; background: #3498db; color: white; font-size: 14px; font-weight: bold; }
+    .phase-card { background: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: left; }
+    .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .nav-tabs .btn { flex: 1; min-width: 140px; margin-top: 0; }
+    .class-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; background: #fafafa; border-radius: 6px; margin-bottom: 8px; }
+    
+    .checkbox-list { display: flex; flex-direction: column; gap: 8px; background: #fff; padding: 10px; border: 1px solid #ccc; border-radius: 6px; max-height: 200px; overflow-y: auto; }
+    .checkbox-item { display: flex; align-items: center; gap: 10px; font-size: 15px; cursor: pointer; }
+    .checkbox-item input { width: 18px; height: 18px; cursor: pointer; }
+
+    /* ESTILOS DA COLOCAÇÃO NO RANKING */
+    .pos-badge { font-weight: bold; font-size: 16px; }
+    .pos-1 { color: #d4ac0d; font-size: 18px; } /* Ouro */
+    .pos-2 { color: #7f8c8d; font-size: 17px; } /* Prata */
+    .pos-3 { color: #a0522d; font-size: 16px; } /* Bronze */
+
+    /* MODAL DE EDIÇÃO */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+    .modal-overlay.active { display: flex; }
+    .modal-content { background: white; border-radius: 10px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+    .thumb-preview { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- 1. TELA INICIAL (LOGIN ALUNO) -->
+  <div id="screen-login" class="screen active">
+    <h1>🎮 Jogo das Sílabas</h1>
+    <div class="input-group">
+      <label>PIN do Jogo:</label>
+      <input type="text" id="player-pin" placeholder="Ex: 1234" style="text-transform: uppercase;">
+    </div>
+    <div class="input-group">
+      <label>Seu Nome (máximo 15 caracteres):</label>
+      <input type="text" id="player-name" maxlength="15" placeholder="Digite seu nome">
+    </div>
+    <button class="btn btn-success" onclick="startStudentGame()">Entrar e Jogar</button>
+    <hr style="margin: 20px 0;">
+    <button class="btn btn-secondary" onclick="showScreen('screen-admin-login')">Área do Professor / Admin</button>
+  </div>
+
+  <!-- 2. TELA LOGIN ADMIN -->
+  <div id="screen-admin-login" class="screen">
+    <h2>🔐 Acesso do Professor</h2>
+    <div class="input-group">
+      <label>Senha de Acesso:</label>
+      <input type="password" id="admin-pass" placeholder="Senha padrão: admin">
+    </div>
+    <button class="btn" onclick="loginAdmin()">Acessar Painel</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-login')">Voltar</button>
+  </div>
+
+  <!-- 3. PAINEL ADMIN -->
+  <div id="screen-admin-panel" class="screen">
+    <h2>⚙️ Painel do Professor</h2>
+    
+    <div class="nav-tabs">
+      <button class="btn" onclick="showAdminTab('create-phase')">➕ 1. Cadastrar Fase</button>
+      <button class="btn btn-success" onclick="showAdminTab('assign-game')">🎮 2. Criar Jogo p/ Turma</button>
+      <button class="btn btn-warning" onclick="showAdminTab('manage')">📁 Gerenciar Jogos e Fases</button>
+      <button class="btn btn-secondary" onclick="showAdminTab('classes')">🏫 Turmas</button>
+      <button class="btn btn-success" onclick="showAdminTab('ranking')">📊 Ranking</button>
+    </div>
+
+    <!-- TAB 1: Cadastrar Nova Fase -->
+    <div id="admin-tab-create-phase">
+      <h3>1. Cadastrar Fase no Banco de Dados</h3>
+      <div class="input-group">
+        <label>Nome/Título da Fase (Ex: Fase 1 - Animais, Fase 2 - Frutas):</label>
+        <input type="text" id="phase-title-input" placeholder="Digite um nome de identificação para esta fase">
+      </div>
+      
+      <div id="words-form-container">
+        <!-- 4 Palavras da fase -->
+      </div>
+
+      <button class="btn btn-success" onclick="saveNewPhaseToBank()">Salvar Fase no Banco</button>
+    </div>
+
+    <!-- TAB 2: Criar Jogo / Associar Fases a uma Turma -->
+    <div id="admin-tab-assign-game" style="display:none;">
+      <h3>2. Criar Jogo (PIN) para uma Turma</h3>
+      <div class="input-group">
+        <label>Defina o PIN do Jogo (ex: 1234, TURMA1):</label>
+        <input type="text" id="new-pin" placeholder="Ex: 1234" style="text-transform: uppercase;">
+      </div>
+      <div class="input-group">
+        <label>Selecione a Turma:</label>
+        <select id="new-game-class"></select>
+      </div>
+
+      <div class="input-group">
+        <label>Marque as Fases que farão parte deste Jogo/PIN:</label>
+        <div id="available-phases-checkboxes" class="checkbox-list">
+          <!-- Checkboxes de fases cadastradas -->
+        </div>
+      </div>
+
+      <button class="btn btn-success" onclick="createGameWithSelectedPhases()">Gerar Jogo para a Turma</button>
+    </div>
+
+    <!-- TAB 3: Gerenciar Jogos e Fases -->
+    <div id="admin-tab-manage" style="display:none;">
+      <h3>Jogos Ativos (PINs por Turma)</h3>
+      <div id="games-manage-list"></div>
+
+      <hr style="margin: 25px 0;">
+
+      <h3>Banco de Fases Cadastradas</h3>
+      <div id="bank-phases-list"></div>
+    </div>
+
+    <!-- TAB 4: Cadastrar/Editar Turmas -->
+    <div id="admin-tab-classes" style="display:none;">
+      <h3>Gerenciar Turmas</h3>
+      <div class="input-group">
+        <label>Nome da Nova Turma:</label>
+        <input type="text" id="class-name-input" placeholder="Ex: 1º Ano A, 2º Ano B">
+      </div>
+      <button class="btn btn-success" onclick="addNewClass()">Adicionar Turma</button>
+
+      <h4 style="margin-top:20px; margin-bottom:10px;">Turmas Cadastradas:</h4>
+      <div id="classes-list"></div>
+    </div>
+
+    <!-- TAB 5: Ranking -->
+    <div id="admin-tab-ranking" style="display:none;">
+      <h3>🏆 Ranking dos Alunos</h3>
+      <div class="input-group">
+        <label>Filtrar por PIN do Jogo:</label>
+        <select id="rank-filter-pin" onchange="renderRankingTable()"></select>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 100px;">Posição</th>
+            <th>Aluno</th>
+            <th>Turma</th>
+            <th>PIN</th>
+            <th>Pontuação</th>
+            <th>Data/Hora</th>
+          </tr>
+        </thead>
+        <tbody id="ranking-table-body"></tbody>
+      </table>
+    </div>
+
+    <button class="btn btn-secondary" style="margin-top:20px;" onclick="showScreen('screen-login')">Sair do Painel</button>
+  </div>
+
+  <!-- 4. TELA DO JOGO (ALUNO) -->
+  <div id="screen-game" class="screen">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <span class="badge" id="game-info-student">Aluno: -</span>
+      <span class="badge" style="background:#e67e22;" id="game-info-class">Turma: -</span>
+      <span class="badge" style="background:#27ae60;" id="game-info-phase">Fase 1</span>
+    </div>
+
+    <h2>Clique no campo e escolha a sílaba correta:</h2>
+
+    <div class="game-layout">
+      <!-- Coluna da Esquerda: As 4 palavras da fase -->
+      <div class="words-column" id="game-words-column"></div>
+
+      <!-- Coluna da Direita: Painel único de sílabas (4 por linha) -->
+      <div class="sidebar-options">
+        <h3>Opções de Sílabas</h3>
+        <div class="options-grid" id="game-sidebar-options"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-success" id="btn-submit-phase" style="margin-top:20px;" onclick="submitPhase()">Finalizar e Enviar Pontuação 🏆</button>
+  </div>
+
+  <!-- 5. TELA DE FIM DE JOGO -->
+  <div id="screen-finish" class="screen" style="text-align: center;">
+    🎉
+    <h2>Parabéns! Você concluiu a atividade!</h2>
+    <p style="font-size: 20px; margin: 15px 0;">Sua pontuação final foi: <strong id="final-score" style="color:#2ecc71;">0</strong> acertos!</p>
+    <p>Seus resultados foram enviados ao professor com sucesso.</p>
+    <button class="btn" onclick="showScreen('screen-login')" style="margin-top:20px;">Voltar ao Início</button>
+  </div>
+
+</div>
+
+<!-- MODAL DE EDIÇÃO DE FASE DO BANCO -->
+<div id="edit-modal" class="modal-overlay">
+  <div class="modal-content">
+    <h2>✏️ Editar Conteúdo da Fase</h2>
+    <div class="input-group">
+      <label>Título da Fase:</label>
+      <input type="text" id="edit-phase-title">
+    </div>
+    
+    <div id="edit-words-container"></div>
+
+    <button class="btn btn-success" onclick="savePhaseEdit()">Salvar Alterações da Fase</button>
+    <button class="btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
+  </div>
+</div>
+
+<script>
+  // BANCO DE DADOS LOCAL (LocalStorage)
+  let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["1º Ano A", "1º Ano B", "2º Ano A"];
+  let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phase_bank")) || []; 
+  let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {}; 
+  let dbRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
+
+  // ESTADO DA SESSÃO ATUAL
+  let currentGame = null;
+  let currentPhaseIndex = 0;
+  let currentStudent = { name: "", pin: "", className: "" };
+  let selectedSlot = null;
+  let totalScore = 0;
+  let phaseFinished = false;
+
+  // ESTADO DE EDIÇÃO ATUAL
+  let editingPhaseId = null;
+
+  // NAVEGAÇÃO DE TELAS
+  function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+  }
+
+  function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[i], arr[j]];
+    }
+    return arr;
+  }
+
+  function convertFileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
+  }
+
+  // --- ÁREA DO ALUNO ---
+  function startStudentGame() {
+    const pin = document.getElementById("player-pin").value.trim().toUpperCase();
+    const name = document.getElementById("player-name").value.trim();
+
+    if (!pin || !name) {
+      alert("Por favor, digite o PIN do jogo e o seu Nome!");
+      return;
+    }
+
+    if (!dbGames[pin] || !dbGames[pin].phaseIds || dbGames[pin].phaseIds.length === 0) {
+      alert("PIN não encontrado ou este jogo não possui fases associadas!");
+      return;
+    }
+
+    const gameData = dbGames[pin];
+    
+    const activePhases = gameData.phaseIds
+      .map(id => dbPhaseBank.find(p => p.id === id))
+      .filter(p => p !== undefined);
+
+    if (activePhases.length === 0) {
+      alert("As fases deste jogo parecem ter sido excluídas!");
+      return;
+    }
+
+    currentStudent = { name, pin, className: gameData.className || "Não Informada" };
+    currentGame = activePhases;
+    currentPhaseIndex = 0;
+    totalScore = 0;
+
+    document.getElementById("game-info-student").innerText = `Aluno: ${name}`;
+    document.getElementById("game-info-class").innerText = `Turma: ${currentStudent.className}`;
+    
+    loadPhase(currentPhaseIndex);
+    showScreen("screen-game");
+  }
+
+  function loadPhase(index) {
+    const phaseData = currentGame[index];
+    document.getElementById("game-info-phase").innerText = `Fase ${index + 1} de ${currentGame.length} (${phaseData.title || 'Fase'})`;
+    
+    const btnSubmit = document.getElementById("btn-submit-phase");
+    btnSubmit.innerText = currentPhaseIndex + 1 < currentGame.length ? "Concluir Fase e Ir para Próxima ➡️" : "Finalizar e Enviar Pontuação 🏆";
+    btnSubmit.onclick = submitPhase;
+
+    phaseFinished = false;
+    selectedSlot = null;
+
+    const wordsColumn = document.getElementById("game-words-column");
+    const sidebarOptions = document.getElementById("game-sidebar-options");
+    wordsColumn.innerHTML = "";
+    sidebarOptions.innerHTML = "";
+
+    let allPhaseSyllables = [];
+    phaseData.words.forEach(item => {
+      allPhaseSyllables.push(...item.syllables);
+      if (item.options) {
+        item.options.forEach(opt => {
+          if (opt) allPhaseSyllables.push(opt);
+        });
+      }
+    });
+
+    phaseData.words.forEach((item, wIndex) => {
+      const row = document.createElement("div");
+      row.className = "word-row";
+
+      const imgBox = document.createElement("div");
+      imgBox.className = "img-box";
+      const img = document.createElement("img");
+      img.src = item.img;
+      imgBox.appendChild(img);
+      row.appendChild(imgBox);
+
+      const slotsContainer = document.createElement("div");
+      slotsContainer.className = "slots-container";
+      
+      item.syllables.forEach((_, sIndex) => {
+        const slot = document.createElement("div");
+        slot.className = "slot";
+        slot.dataset.word = wIndex;
+        slot.dataset.slot = sIndex;
+        slot.dataset.usedOptId = "";
+        slot.onclick = () => selectSlot(slot);
+        slotsContainer.appendChild(slot);
+      });
+      row.appendChild(slotsContainer);
+
+      wordsColumn.appendChild(row);
+    });
+
+    const shuffledSyllables = shuffleArray(allPhaseSyllables);
+    shuffledSyllables.forEach((syl, optIdx) => {
+      const opt = document.createElement("div");
+      const optId = `opt-phase-${optIdx}-${syl}`;
+      opt.className = "option";
+      opt.innerText = syl;
+      opt.id = optId;
+      opt.onclick = () => fillSlot(opt, syl, optId);
+      sidebarOptions.appendChild(opt);
+    });
+  }
+
+  function selectSlot(slot) {
+    if (phaseFinished) return;
+
+    if (slot.innerText !== "") {
+      const usedOptId = slot.dataset.usedOptId;
+      if (usedOptId) {
+        const optElem = document.getElementById(usedOptId);
+        if (optElem) optElem.classList.remove("hidden");
+      }
+
+      slot.innerText = "";
+      slot.dataset.usedOptId = "";
+      slot.classList.remove("filled");
+    }
+
+    if (selectedSlot) selectedSlot.classList.remove("selected");
+    selectedSlot = slot;
+    selectedSlot.classList.add("selected");
+  }
+
+  function fillSlot(optionBtn, syllableText, optionId) {
+    if (phaseFinished) return;
+
+    if (!selectedSlot) {
+      alert("Clique primeiro em um campo em branco onde quer colocar a sílaba!");
+      return;
+    }
+
+    if (selectedSlot.dataset.usedOptId) {
+      const prevOpt = document.getElementById(selectedSlot.dataset.usedOptId);
+      if (prevOpt) prevOpt.classList.remove("hidden");
+    }
+
+    selectedSlot.innerText = syllableText;
+    selectedSlot.dataset.usedOptId = optionId;
+    selectedSlot.classList.remove("selected");
+    selectedSlot.classList.add("filled");
+
+    optionBtn.classList.add("hidden");
+
+    selectedSlot = null;
+  }
+
+  function submitPhase() {
+    if (phaseFinished) return;
+
+    const phaseData = currentGame[currentPhaseIndex];
+    let phaseScore = 0;
+    let allFilled = true;
+
+    const allSlots = document.querySelectorAll(".slot");
+    allSlots.forEach(s => {
+      if (s.innerText.trim() === "") allFilled = false;
+    });
+
+    if (!allFilled) {
+      if (!confirm("Você ainda tem campos em branco. Deseja finalizar mesmo assim?")) {
+        return;
+      }
+    }
+
+    phaseFinished = true;
+
+    phaseData.words.forEach((w, wIdx) => {
+      w.syllables.forEach((correctSyl, sIdx) => {
+        const slot = document.querySelector(`.slot[data-word='${wIdx}'][data-slot='${sIdx}']`);
+        if (slot) {
+          const userSyl = slot.innerText.trim();
+          if (userSyl === correctSyl) {
+            slot.classList.add("correct");
+            phaseScore += 1;
+          } else {
+            slot.classList.add("wrong");
+          }
+        }
+      });
+    });
+
+    totalScore += phaseScore;
+
+    setTimeout(() => {
+      if (currentPhaseIndex + 1 < currentGame.length) {
+        currentPhaseIndex++;
+        loadPhase(currentPhaseIndex);
+      } else {
+        finishGame();
+      }
+    }, 1500);
+  }
+
+  function finishGame() {
+    dbRankings.push({
+      student: currentStudent.name,
+      className: currentStudent.className,
+      pin: currentStudent.pin,
+      score: totalScore,
+      date: new Date().toLocaleString("pt-BR")
+    });
+    localStorage.setItem("syllable_rankings", JSON.stringify(dbRankings));
+
+    document.getElementById("final-score").innerText = totalScore;
+    showScreen("screen-finish");
+  }
+
+  // --- ÁREA DO ADMINISTRADOR ---
+  function loginAdmin() {
+    const pass = document.getElementById("admin-pass").value;
+    if (pass === "admin" || pass === "1234") {
+      updateClassDropdown();
+      renderAdminForm();
+      showAdminTab('create-phase');
+      showScreen("screen-admin-panel");
+    } else {
+      alert("Senha incorreta!");
+    }
+  }
+
+  function showAdminTab(tabName) {
+    document.getElementById("admin-tab-create-phase").style.display = tabName === 'create-phase' ? 'block' : 'none';
+    document.getElementById("admin-tab-assign-game").style.display = tabName === 'assign-game' ? 'block' : 'none';
+    document.getElementById("admin-tab-manage").style.display = tabName === 'manage' ? 'block' : 'none';
+    document.getElementById("admin-tab-classes").style.display = tabName === 'classes' ? 'block' : 'none';
+    document.getElementById("admin-tab-ranking").style.display = tabName === 'ranking' ? 'block' : 'none';
+    
+    if (tabName === 'assign-game') renderAvailablePhasesCheckboxes();
+    if (tabName === 'manage') renderManageGamesAndPhases();
+    if (tabName === 'classes') renderClassesList();
+    if (tabName === 'ranking') renderRankingTable();
+  }
+
+  function updateClassDropdown() {
+    const select = document.getElementById("new-game-class");
+    select.innerHTML = "";
+    if (dbClasses.length === 0) {
+      select.innerHTML = '<option value="">Nenhuma turma cadastrada</option>';
+      return;
+    }
+    dbClasses.forEach(c => {
+      select.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+  }
+
+  function renderAdminForm() {
+    const container = document.getElementById("words-form-container");
+    container.innerHTML = "";
+
+    for (let i = 0; i < 4; i++) {
+      const card = document.createElement("div");
+      card.className = "phase-card";
+      card.innerHTML = `
+        <h4>Palavra ${i + 1}</h4>
+        <div class="input-group">
+          <label>Imagem da Palavra (Upload PNG/JPEG):</label>
+          <input type="file" accept="image/*" class="admin-img-file">
+        </div>
+        <div class="input-group">
+          <label>Sílabas Corretas (separadas por hífen, ex: SA-PO):</label>
+          <input type="text" class="admin-correct-syl" placeholder="Ex: SA-PO">
+        </div>
+        <div class="input-group">
+          <label>Sílabas Incorretas/Extras desta palavra (separadas por vírgula):</label>
+          <input type="text" class="admin-options-syl" placeholder="Ex: PA, TA">
+        </div>
+      `;
+      container.appendChild(card);
+    }
+  }
+
+  async function saveNewPhaseToBank() {
+    const title = document.getElementById("phase-title-input").value.trim() || `Fase ${dbPhaseBank.length + 1}`;
+
+    const correctInputs = document.querySelectorAll(".admin-correct-syl");
+    const optionsInputs = document.querySelectorAll(".admin-options-syl");
+    const fileInputs = document.querySelectorAll(".admin-img-file");
+
+    let wordsList = [];
+
+    for (let i = 0; i < 4; i++) {
+      const correctText = correctInputs[i].value.trim().toUpperCase();
+      const optionsText = optionsInputs[i].value.trim().toUpperCase();
+      const file = fileInputs[i].files[0];
+
+      if (!correctText) {
+        alert(`Preencha as sílabas corretas da Palavra ${i + 1}!`);
+        return;
+      }
+
+      let imgUrl = "https://cdn-icons-png.flaticon.com/512/33/33736.png";
+      if (file) {
+        imgUrl = await convertFileToBase64(file);
+      }
+
+      wordsList.push({
+        name: correctText.replace(/-/g, ""),
+        syllables: correctText.split("-"),
+        options: optionsText ? optionsText.split(",").map(s => s.trim()) : [],
+        img: imgUrl
+      });
+    }
+
+    const newPhaseObj = {
+      id: "phase_" + Date.now(),
+      title: title,
+      words: wordsList
+    };
+
+    dbPhaseBank.push(newPhaseObj);
+    localStorage.setItem("syllable_phase_bank", JSON.stringify(dbPhaseBank));
+    
+    alert(`Fase "${title}" cadastrada no Banco de Fases com sucesso! Agora você pode vinculá-la a uma turma na aba '2. Criar Jogo p/ Turma'.`);
+    document.getElementById("phase-title-input").value = "";
+    renderAdminForm();
+  }
+
+  function renderAvailablePhasesCheckboxes() {
+    const container = document.getElementById("available-phases-checkboxes");
+    container.innerHTML = "";
+
+    if (dbPhaseBank.length === 0) {
+      container.innerHTML = "<p style='color:#777;'>Nenhuma fase cadastrada no banco. Cadastre fases na aba '1. Cadastrar Fase' primeiro!</p>";
+      return;
+    }
+
+    dbPhaseBank.forEach((phase, idx) => {
+      const wordsPreview = phase.words.map(w => w.syllables.join("")).join(", ");
+      container.innerHTML += `
+        <label class="checkbox-item">
+          <input type="checkbox" value="${phase.id}" class="phase-checkbox">
+          <span><strong>${phase.title || 'Fase ' + (idx + 1)}</strong> — Palavras: [${wordsPreview}]</span>
+        </label>
+      `;
+    });
+  }
+
+  function createGameWithSelectedPhases() {
+    const pin = document.getElementById("new-pin").value.trim().toUpperCase();
+    const className = document.getElementById("new-game-class").value;
+    
+    if (!pin) { alert("Digite um PIN!"); return; }
+    if (!className) { alert("Selecione uma turma!"); return; }
+
+    const checkedBoxes = document.querySelectorAll(".phase-checkbox:checked");
+    const selectedPhaseIds = Array.from(checkedBoxes).map(cb => cb.value);
+
+    if (selectedPhaseIds.length === 0) {
+      alert("Selecione pelo menos 1 fase para incluir neste jogo!");
+      return;
+    }
+
+    dbGames[pin] = {
+      className: className,
+      phaseIds: selectedPhaseIds
+    };
+
+    localStorage.setItem("syllable_games", JSON.stringify(dbGames));
+    alert(`Jogo cadastrado! PIN: ${pin} | Turma: ${className} | Total de Fases: ${selectedPhaseIds.length}`);
+    document.getElementById("new-pin").value = "";
+  }
+
+  // --- GERENCIAMENTO DE JOGOS E FASES BANCO ---
+  function renderManageGamesAndPhases() {
+    const gamesContainer = document.getElementById("games-manage-list");
+    gamesContainer.innerHTML = "";
+
+    const pins = Object.keys(dbGames);
+    if (pins.length === 0) {
+      gamesContainer.innerHTML = "<p>Nenhum jogo/PIN configurado para turmas no momento.</p>";
+    } else {
+      pins.forEach(pin => {
+        const g = dbGames[pin];
+        const phaseNames = g.phaseIds.map(id => {
+          const found = dbPhaseBank.find(p => p.id === id);
+          return found ? found.title : "Fase Removida";
+        }).join(" | ");
+
+        gamesContainer.innerHTML += `
+          <div class="phase-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h4 style="margin:0;">PIN: ${pin} | Turma: ${g.className}</h4>
+                <p style="font-size:14px; color:#555; margin-top:5px;"><strong>Fases Incluídas:</strong> ${phaseNames}</p>
+              </div>
+              <div>
+                <button class="btn btn-danger btn-small" onclick="deleteGame('${pin}')">🗑️ Excluir Jogo</button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    const bankContainer = document.getElementById("bank-phases-list");
+    bankContainer.innerHTML = "";
+
+    if (dbPhaseBank.length === 0) {
+      bankContainer.innerHTML = "<p>Nenhuma fase cadastrada no banco de dados.</p>";
+    } else {
+      dbPhaseBank.forEach((p, idx) => {
+        const wordsStr = p.words.map(w => w.syllables.join("")).join(", ");
+        bankContainer.innerHTML += `
+          <div class="phase-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h4 style="margin:0;">${p.title || 'Fase ' + (idx + 1)}</h4>
+                <p style="font-size:14px; color:#555; margin-top:5px;"><strong>Palavras:</strong> [${wordsStr}]</p>
+              </div>
+              <div>
+                <button class="btn btn-warning btn-small" onclick="openEditPhaseModal('${p.id}')">✏️ Editar Conteúdo</button>
+                <button class="btn btn-danger btn-small" onclick="deleteBankPhase('${p.id}')">🗑️ Excluir Fase</button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+  }
+
+  function openEditPhaseModal(phaseId) {
+    editingPhaseId = phaseId;
+    const phase = dbPhaseBank.find(p => p.id === phaseId);
+    if (!phase) return;
+
+    document.getElementById("edit-phase-title").value = phase.title || "";
+
+    const container = document.getElementById("edit-words-container");
+    container.innerHTML = "";
+
+    phase.words.forEach((w, idx) => {
+      const card = document.createElement("div");
+      card.className = "phase-card";
+      card.innerHTML = `
+        <h4>Palavra ${idx + 1}</h4>
+        <div style="display:flex; gap:15px; align-items:center; margin-bottom:10px;">
+          <div>
+            <label style="font-size:12px; display:block;">Imagem Atual:</label>
+            <img src="${w.img}" class="thumb-preview">
+          </div>
+          <div class="input-group" style="flex:1; margin-bottom:0;">
+            <label>Alterar Imagem (PNG/JPEG):</label>
+            <input type="file" accept="image/*" class="edit-img-file">
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Sílabas Corretas (ex: SA-PO):</label>
+          <input type="text" class="edit-correct-syl" value="${w.syllables.join("-")}">
+        </div>
+        <div class="input-group">
+          <label>Sílabas Incorretas/Extras (ex: PA, TA):</label>
+          <input type="text" class="edit-options-syl" value="${w.options ? w.options.join(", ") : ""}">
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+    document.getElementById("edit-modal").classList.add("active");
+  }
+
+  function closeEditModal() {
+    document.getElementById("edit-modal").classList.remove("active");
+    editingPhaseId = null;
+  }
+
+  async function savePhaseEdit() {
+    if (!editingPhaseId) return;
+
+    const phase = dbPhaseBank.find(p => p.id === editingPhaseId);
+    if (!phase) return;
+
+    const newTitle = document.getElementById("edit-phase-title").value.trim();
+    if (newTitle) phase.title = newTitle;
+
+    const correctInputs = document.querySelectorAll(".edit-correct-syl");
+    const optionsInputs = document.querySelectorAll(".edit-options-syl");
+    const fileInputs = document.querySelectorAll(".edit-img-file");
+
+    for (let i = 0; i < phase.words.length; i++) {
+      const correctText = correctInputs[i].value.trim().toUpperCase();
+      const optionsText = optionsInputs[i].value.trim().toUpperCase();
+      const file = fileInputs[i].files[0];
+
+      if (!correctText) {
+        alert(`As sílabas da Palavra ${i + 1} não podem ficar em branco!`);
+        return;
+      }
+
+      if (file) {
+        phase.words[i].img = await convertFileToBase64(file);
+      }
+
+      phase.words[i].syllables = correctText.split("-");
+      phase.words[i].name = correctText.replace(/-/g, "");
+      phase.words[i].options = optionsText ? optionsText.split(",").map(s => s.trim()) : [];
+    }
+
+    localStorage.setItem("syllable_phase_bank", JSON.stringify(dbPhaseBank));
+    alert("Fase atualizada com sucesso!");
+    closeEditModal();
+    renderManageGamesAndPhases();
+  }
+
+  function deleteGame(pin) {
+    if (confirm(`Tem certeza que deseja excluir o jogo de PIN "${pin}"?`)) {
+      delete dbGames[pin];
+      localStorage.setItem("syllable_games", JSON.stringify(dbGames));
+      renderManageGamesAndPhases();
+    }
+  }
+
+  function deleteBankPhase(phaseId) {
+    if (confirm("Tem certeza que deseja excluir esta fase do banco? Ela deixará de aparecer nos jogos associados.")) {
+      dbPhaseBank = dbPhaseBank.filter(p => p.id !== phaseId);
+      localStorage.setItem("syllable_phase_bank", JSON.stringify(dbPhaseBank));
+      renderManageGamesAndPhases();
+    }
+  }
+
+  // --- GERENCIAMENTO DE TURMAS ---
+  function renderClassesList() {
+    const list = document.getElementById("classes-list");
+    list.innerHTML = "";
+
+    if (dbClasses.length === 0) {
+      list.innerHTML = "<p>Nenhuma turma cadastrada.</p>";
+      return;
+    }
+
+    dbClasses.forEach((cls, idx) => {
+      list.innerHTML += `
+        <div class="class-list-item">
+          <span><strong>${cls}</strong></span>
+          <button class="btn btn-danger btn-small" onclick="deleteClass(${idx})">🗑️ Excluir</button>
+        </div>
+      `;
+    });
+  }
+
+  function addNewClass() {
+    const input = document.getElementById("class-name-input");
+    const name = input.value.trim();
+
+    if (!name) {
+      alert("Digite o nome da turma!");
+      return;
+    }
+
+    if (dbClasses.includes(name)) {
+      alert("Esta turma já está cadastrada!");
+      return;
+    }
+
+    dbClasses.push(name);
+    localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
+    input.value = "";
+    renderClassesList();
+    updateClassDropdown();
+  }
+
+  function deleteClass(index) {
+    if (confirm(`Tem certeza que deseja remover a turma "${dbClasses[index]}"?`)) {
+      dbClasses.splice(index, 1);
+      localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
+      renderClassesList();
+      updateClassDropdown();
+    }
+  }
+
+  // --- RANKING (COM COLOCAÇÃO) ---
+  function renderRankingTable() {
+    const filterSelect = document.getElementById("rank-filter-pin");
+    const pins = Object.keys(dbGames);
+    
+    const currentSelectedFilter = filterSelect.value;
+    filterSelect.innerHTML = '<option value="ALL">Todos os PINs</option>';
+    pins.forEach(pin => {
+      filterSelect.innerHTML += `<option value="${pin}">PIN: ${pin} (${dbGames[pin].className})</option>`;
+    });
+    filterSelect.value = currentSelectedFilter || "ALL";
+
+    const selectedPin = filterSelect.value;
+    const tbody = document.getElementById("ranking-table-body");
+    tbody.innerHTML = "";
+
+    let filteredRankings = dbRankings;
+    if (selectedPin && selectedPin !== "ALL") {
+      filteredRankings = dbRankings.filter(r => r.pin === selectedPin);
+    }
+
+    // Ordenar do maior para o menor resultado
+    filteredRankings.sort((a, b) => b.score - a.score);
+
+    if (filteredRankings.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6">Nenhum registro de pontuação encontrado.</td></tr>';
+      return;
+    }
+
+    filteredRankings.forEach((r, index) => {
+      const position = index + 1;
+      let posDisplay = "";
+
+      // Definição das medalhas e visual por colocação
+      if (position === 1) {
+        posDisplay = '<span class="pos-badge pos-1">🥇 1º</span>';
+      } else if (position === 2) {
+        posDisplay = '<span class="pos-badge pos-2">🥈 2º</span>';
+      } else if (position === 3) {
+        posDisplay = '<span class="pos-badge pos-3">🥉 3º</span>';
+      } else {
+        posDisplay = `<span class="pos-badge" style="color:#555;">${position}º</span>`;
+      }
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${posDisplay}</td>
+          <td><strong>${r.student}</strong></td>
+          <td>${r.className}</td>
+          <td><span class="badge">${r.pin}</span></td>
+          <td><strong style="color:#2ecc71;">${r.score}</strong> pts</td>
+          <td style="font-size:13px; color:#666;">${r.date}</td>
+        </tr>
+      `;
+    });
+  }
+</script>
+
+</body>
+</html>
