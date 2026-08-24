@@ -162,6 +162,7 @@
 
       <h3>Banco de Fases Cadastradas</h3>
       <div id="bank-phases-list"></div>
+      <button class="btn btn-danger btn-small" style="margin-top:15px;" onclick="resetAllData()">⚠️ Limpar Tudo e Resetar Dados do Sistema</button>
     </div>
 
     <!-- TAB 4: Cadastrar/Editar Turmas -->
@@ -287,45 +288,45 @@
     });
   }
 
-  // LOGICA PRINCIPAL DE LOGIN E ACESSO AO JOGO
   function startStudentGame() {
-    const inputPin = document.getElementById("player-pin").value.trim().toUpperCase();
+    const rawPin = document.getElementById("player-pin").value.trim();
     const name = document.getElementById("player-name").value.trim();
 
-    if (!inputPin || !name) {
+    if (!rawPin || !name) {
       alert("Por favor, digite o PIN do jogo e o seu Nome!");
       return;
     }
 
-    // Busca a chave do PIN ignorando case
-    const matchedPinKey = Object.keys(dbGames).find(key => key.toUpperCase() === inputPin);
+    const searchPin = String(rawPin).toUpperCase();
+    
+    // Busca flexível do PIN no LocalStorage
+    let matchedKey = Object.keys(dbGames).find(key => String(key).toUpperCase() === searchPin);
 
-    if (!matchedPinKey || !dbGames[matchedPinKey]) {
-      alert("PIN não encontrado! Verifique o código digitado.");
+    if (!matchedKey || !dbGames[matchedKey]) {
+      alert("PIN não encontrado! Verifique o código digitado ou crie o jogo novamente no Painel do Professor.");
       return;
     }
 
-    const gameData = dbGames[matchedPinKey];
+    const gameData = dbGames[matchedKey];
     let activePhases = [];
 
-    // Tenta encontrar as fases pelos IDs cadastrados
     if (gameData.phaseIds && gameData.phaseIds.length > 0) {
       activePhases = gameData.phaseIds
-        .map(id => dbPhaseBank.find(p => p.id === id))
+        .map(id => dbPhaseBank.find(p => String(p.id) === String(id)))
         .filter(p => p !== undefined);
     }
 
-    // CONTINGÊNCIA: Se não achou por ID (devido a atualizações antigas), carrega todas as fases ativas no banco
+    // Fallback: Se não encontrou fases por ID, carrega todas as fases cadastradas
     if (activePhases.length === 0 && dbPhaseBank.length > 0) {
       activePhases = [...dbPhaseBank];
     }
 
     if (activePhases.length === 0) {
-      alert("Este jogo não possui fases associadas no momento. Peça ao professor para salvar uma fase e recriar o PIN!");
+      alert("Este jogo não possui fases associadas no momento.");
       return;
     }
 
-    currentStudent = { name, pin: matchedPinKey.toUpperCase(), className: gameData.className || "Não Informada" };
+    currentStudent = { name, pin: searchPin, className: gameData.className || "Não Informada" };
     currentGame = activePhases;
     currentPhaseIndex = 0;
     totalScore = 0;
@@ -637,14 +638,15 @@
   }
 
   function createGameWithSelectedPhases() {
-    const pin = document.getElementById("new-pin").value.trim().toUpperCase();
+    const rawPin = document.getElementById("new-pin").value.trim();
     const className = document.getElementById("new-game-class").value;
     
-    if (!pin) { alert("Digite um PIN!"); return; }
+    if (!rawPin) { alert("Digite um PIN!"); return; }
     if (!className) { alert("Selecione uma turma!"); return; }
 
+    const pin = String(rawPin).toUpperCase();
     const checkedBoxes = document.querySelectorAll(".phase-checkbox:checked");
-    const selectedPhaseIds = Array.from(checkedBoxes).map(cb => cb.value);
+    const selectedPhaseIds = Array.from(checkedBoxes).map(cb => String(cb.value));
 
     if (selectedPhaseIds.length === 0) {
       alert("Selecione pelo menos 1 fase para incluir neste jogo!");
@@ -657,7 +659,7 @@
     };
 
     localStorage.setItem("syllable_games", JSON.stringify(dbGames));
-    alert(`Jogo cadastrado! PIN: ${pin} | Turma: ${className}`);
+    alert(`Jogo cadastrado com sucesso! PIN: ${pin} | Turma: ${className}`);
     document.getElementById("new-pin").value = "";
   }
 
@@ -672,7 +674,7 @@
       pins.forEach(pin => {
         const g = dbGames[pin];
         const phaseNames = g.phaseIds ? g.phaseIds.map(id => {
-          const found = dbPhaseBank.find(p => p.id === id);
+          const found = dbPhaseBank.find(p => String(p.id) === String(id));
           return found ? found.title : "Fase Cadastrada";
         }).join(" | ") : "Todas as fases ativas";
 
@@ -680,7 +682,7 @@
           <div class="phase-card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
               <div>
-                <h4 style="margin:0;">PIN: ${pin.toUpperCase()} | Turma: ${g.className}</h4>
+                <h4 style="margin:0;">PIN: ${String(pin).toUpperCase()} | Turma: ${g.className}</h4>
                 <p style="font-size:14px; color:#555; margin-top:5px;"><strong>Fases Incluídas:</strong> ${phaseNames}</p>
               </div>
               <div>
@@ -718,9 +720,20 @@
     }
   }
 
+  function resetAllData() {
+    if (confirm("Isto apagará todos os PINs e Fases cadastradas neste navegador. Deseja redefinir?")) {
+      localStorage.clear();
+      dbPhaseBank = [];
+      dbGames = {};
+      dbRankings = [];
+      alert("Todos os dados foram redefinidos! Crie uma nova fase e um novo PIN.");
+      location.reload();
+    }
+  }
+
   function openEditPhaseModal(phaseId) {
     editingPhaseId = phaseId;
-    const phase = dbPhaseBank.find(p => p.id === phaseId);
+    const phase = dbPhaseBank.find(p => String(p.id) === String(phaseId));
     if (!phase) return;
 
     document.getElementById("edit-phase-title").value = phase.title || "";
@@ -766,7 +779,7 @@
   async function savePhaseEdit() {
     if (!editingPhaseId) return;
 
-    const phase = dbPhaseBank.find(p => p.id === editingPhaseId);
+    const phase = dbPhaseBank.find(p => String(p.id) === String(editingPhaseId));
     if (!phase) return;
 
     const newTitle = document.getElementById("edit-phase-title").value.trim();
@@ -811,7 +824,7 @@
 
   function deleteBankPhase(phaseId) {
     if (confirm("Tem certeza que deseja excluir esta fase do banco?")) {
-      dbPhaseBank = dbPhaseBank.filter(p => p.id !== phaseId);
+      dbPhaseBank = dbPhaseBank.filter(p => String(p.id) !== String(phaseId));
       localStorage.setItem("syllable_phase_bank", JSON.stringify(dbPhaseBank));
       renderManageGamesAndPhases();
     }
@@ -873,7 +886,7 @@
     const currentSelectedFilter = filterSelect.value;
     filterSelect.innerHTML = '<option value="ALL">Todos os PINs</option>';
     pins.forEach(pin => {
-      filterSelect.innerHTML += `<option value="${pin.toUpperCase()}">PIN: ${pin.toUpperCase()} (${dbGames[pin].className})</option>`;
+      filterSelect.innerHTML += `<option value="${String(pin).toUpperCase()}">PIN: ${String(pin).toUpperCase()} (${dbGames[pin].className})</option>`;
     });
     filterSelect.value = currentSelectedFilter || "ALL";
 
@@ -883,7 +896,7 @@
 
     let filteredRankings = dbRankings;
     if (selectedPin && selectedPin !== "ALL") {
-      filteredRankings = dbRankings.filter(r => r.pin.toUpperCase() === selectedPin.toUpperCase());
+      filteredRankings = dbRankings.filter(r => String(r.pin).toUpperCase() === selectedPin.toUpperCase());
     }
 
     filteredRankings.sort((a, b) => b.score - a.score);
@@ -912,7 +925,7 @@
           <td>${posDisplay}</td>
           <td><strong>${r.student}</strong></td>
           <td>${r.className}</td>
-          <td><span class="badge">${r.pin.toUpperCase()}</span></td>
+          <td><span class="badge">${String(r.pin).toUpperCase()}</span></td>
           <td><strong style="color:#2ecc71;">${r.score}</strong> pts</td>
           <td style="font-size:13px; color:#666;">${r.date}</td>
         </tr>
