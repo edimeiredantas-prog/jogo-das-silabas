@@ -252,7 +252,7 @@
 </div>
 
 <script>
-  // FASE PADRÃO EMBUTIDA NO CÓDIGO (Visível em qualquer dispositivo)
+  // FASE PADRÃO EMBUTIDA NO CÓDIGO
   const DEFAULT_PHASE = {
     id: "default_phase_1",
     title: "Fase 1",
@@ -288,7 +288,7 @@
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[i], arr[j]];
+      [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
   }
@@ -313,7 +313,6 @@
 
     const searchPin = String(rawPin).toUpperCase();
     
-    // Busca o PIN criado ou usa o padrão 1234
     let gameData = dbGames[searchPin];
     if (!gameData && searchPin === "1234") {
       gameData = { className: "Infantil V", phaseIds: ["default_phase_1"] };
@@ -331,7 +330,6 @@
         .filter(p => p !== undefined);
     }
 
-    // Fallback: garante que se não achar pelo ID, usa a fase padrão
     if (activePhases.length === 0) {
       activePhases = [DEFAULT_PHASE];
     }
@@ -730,6 +728,22 @@
     }
   }
 
+  function deleteGame(pin) {
+    if (confirm(`Deseja excluir o jogo do PIN ${pin}?`)) {
+      delete dbGames[pin];
+      localStorage.setItem("syllable_games", JSON.stringify(dbGames));
+      renderManageGamesAndPhases();
+    }
+  }
+
+  function deleteBankPhase(phaseId) {
+    if (confirm("Deseja excluir esta fase do banco de dados?")) {
+      dbPhaseBank = dbPhaseBank.filter(p => String(p.id) !== String(phaseId));
+      localStorage.setItem("syllable_phase_bank", JSON.stringify(dbPhaseBank));
+      renderManageGamesAndPhases();
+    }
+  }
+
   function resetAllData() {
     if (confirm("Isto redefinirá os dados salvos para os padrões iniciais. Deseja continuar?")) {
       localStorage.clear();
@@ -804,18 +818,15 @@
       const optionsText = optionsInputs[i].value.trim().toUpperCase();
       const file = fileInputs[i].files[0];
 
-      if (!correctText) {
-        alert(`As sílabas da Palavra ${i + 1} não podem ficar em branco!`);
-        return;
+      if (correctText) {
+        phase.words[i].name = correctText.replace(/-/g, "");
+        phase.words[i].syllables = correctText.split("-");
       }
+      phase.words[i].options = optionsText ? optionsText.split(",").map(s => s.trim()) : [];
 
       if (file) {
         phase.words[i].img = await convertFileToBase64(file);
       }
-
-      phase.words[i].syllables = correctText.split("-");
-      phase.words[i].name = correctText.replace(/-/g, "");
-      phase.words[i].options = optionsText ? optionsText.split(",").map(s => s.trim()) : [];
     }
 
     localStorage.setItem("syllable_phase_bank", JSON.stringify(dbPhaseBank));
@@ -824,119 +835,92 @@
     renderManageGamesAndPhases();
   }
 
-  function deleteGame(pin) {
-    if (confirm(`Tem certeza que deseja excluir o jogo de PIN "${pin}"?`)) {
-      delete dbGames[pin];
-      localStorage.setItem("syllable_games", JSON.stringify(dbGames));
-      renderManageGamesAndPhases();
-    }
-  }
-
-  function deleteBankPhase(phaseId) {
-    if (confirm("Tem certeza que deseja excluir esta fase do banco?")) {
-      dbPhaseBank = dbPhaseBank.filter(p => String(p.id) !== String(phaseId));
-      localStorage.setItem("syllable_phase_bank", JSON.stringify(dbPhaseBank));
-      renderManageGamesAndPhases();
-    }
-  }
-
-  function renderClassesList() {
-    const list = document.getElementById("classes-list");
-    list.innerHTML = "";
-
-    if (dbClasses.length === 0) {
-      list.innerHTML = "<p>Nenhuma turma cadastrada.</p>";
-      return;
-    }
-
-    dbClasses.forEach((cls, idx) => {
-      list.innerHTML += `
-        <div class="class-list-item">
-          <span><strong>${cls}</strong></span>
-          <button class="btn btn-danger btn-small" onclick="deleteClass(${idx})">🗑️ Excluir</button>
-        </div>
-      `;
-    });
-  }
-
   function addNewClass() {
     const input = document.getElementById("class-name-input");
-    const name = input.value.trim();
-
-    if (!name) {
+    const className = input.value.trim();
+    if (!className) {
       alert("Digite o nome da turma!");
       return;
     }
-
-    if (dbClasses.includes(name)) {
-      alert("Esta turma já está cadastrada!");
-      return;
+    if (!dbClasses.includes(className)) {
+      dbClasses.push(className);
+      localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
+      input.value = "";
+      renderClassesList();
+      updateClassDropdown();
+      alert(`Turma "${className}" adicionada com sucesso!`);
+    } else {
+      alert("Essa turma já está cadastrada!");
     }
-
-    dbClasses.push(name);
-    localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
-    input.value = "";
-    renderClassesList();
-    updateClassDropdown();
   }
 
-  function deleteClass(index) {
-    if (confirm(`Tem certeza que deseja remover a turma "${dbClasses[index]}"?`)) {
-      dbClasses.splice(index, 1);
+  function deleteClass(className) {
+    if (confirm(`Deseja remover a turma "${className}"?`)) {
+      dbClasses = dbClasses.filter(c => c !== className);
       localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
       renderClassesList();
       updateClassDropdown();
     }
   }
 
+  function renderClassesList() {
+    const container = document.getElementById("classes-list");
+    container.innerHTML = "";
+    if (dbClasses.length === 0) {
+      container.innerHTML = "<p>Nenhuma turma cadastrada.</p>";
+      return;
+    }
+    dbClasses.forEach(c => {
+      container.innerHTML += `
+        <div class="class-list-item">
+          <span><strong>${c}</strong></span>
+          <button class="btn btn-danger btn-small" onclick="deleteClass('${c}')">Excluir</button>
+        </div>
+      `;
+    });
+  }
+
   function renderRankingTable() {
     const filterSelect = document.getElementById("rank-filter-pin");
-    const pins = Object.keys(dbGames);
-    
-    const currentSelectedFilter = filterSelect.value;
-    filterSelect.innerHTML = '<option value="ALL">Todos os PINs</option>';
-    pins.forEach(pin => {
-      filterSelect.innerHTML += `<option value="${String(pin).toUpperCase()}">PIN: ${String(pin).toUpperCase()} (${dbGames[pin].className})</option>`;
-    });
-    filterSelect.value = currentSelectedFilter || "ALL";
-
-    const selectedPin = filterSelect.value;
     const tbody = document.getElementById("ranking-table-body");
-    tbody.innerHTML = "";
 
-    let filteredRankings = dbRankings;
-    if (selectedPin && selectedPin !== "ALL") {
-      filteredRankings = dbRankings.filter(r => String(r.pin).toUpperCase() === selectedPin.toUpperCase());
+    const pins = Object.keys(dbGames);
+    let optionsHtml = '<option value="ALL">Todos os PINs</option>';
+    pins.forEach(pin => {
+      optionsHtml += `<option value="${pin}">${pin} (${dbGames[pin].className})</option>`;
+    });
+    filterSelect.innerHTML = optionsHtml;
+
+    const selectedPin = filterSelect.value || "ALL";
+
+    let filtered = [...dbRankings];
+    if (selectedPin !== "ALL") {
+      filtered = filtered.filter(r => String(r.pin).toUpperCase() === String(selectedPin).toUpperCase());
     }
 
-    filteredRankings.sort((a, b) => b.score - a.score);
+    filtered.sort((a, b) => b.score - a.score);
 
-    if (filteredRankings.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6">Nenhum registro de pontuação encontrado.</td></tr>';
+    tbody.innerHTML = "";
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="color:#777;">Nenhum resultado registrado ainda.</td></tr>`;
       return;
     }
 
-    filteredRankings.forEach((r, index) => {
-      const position = index + 1;
-      let posDisplay = "";
+    filtered.forEach((r, idx) => {
+      let posClass = "pos-badge";
+      if (idx === 0) posClass += " pos-1";
+      else if (idx === 1) posClass += " pos-2";
+      else if (idx === 2) posClass += " pos-3";
 
-      if (position === 1) {
-        posDisplay = '<span class="pos-badge pos-1">🥇 1º</span>';
-      } else if (position === 2) {
-        posDisplay = '<span class="pos-badge pos-2">🥈 2º</span>';
-      } else if (position === 3) {
-        posDisplay = '<span class="pos-badge pos-3">🥉 3º</span>';
-      } else {
-        posDisplay = `<span class="pos-badge" style="color:#555;">${position}º</span>`;
-      }
+      const posLabel = idx === 0 ? "🥇 1º" : idx === 1 ? "🥈 2º" : idx === 2 ? "🥉 3º" : `${idx + 1}º`;
 
       tbody.innerHTML += `
         <tr>
-          <td>${posDisplay}</td>
+          <td class="${posClass}">${posLabel}</td>
           <td><strong>${r.student}</strong></td>
-          <td>${r.className}</td>
-          <td><span class="badge">${String(r.pin).toUpperCase()}</span></td>
-          <td><strong style="color:#2ecc71;">${r.score}</strong> pts</td>
+          <td>${r.className || '-'}</td>
+          <td>${r.pin || '-'}</td>
+          <td><span class="badge" style="background:#2ecc71;">${r.score} pts</span></td>
           <td style="font-size:13px; color:#666;">${r.date}</td>
         </tr>
       `;
