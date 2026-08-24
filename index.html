@@ -9,11 +9,9 @@
     body { background-color: #f4f7f6; color: #333; padding: 20px; display: flex; justify-content: center; }
     .container { width: 100%; max-width: 1050px; background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     
-    /* Telas */
     .screen { display: none; }
     .screen.active { display: block; }
 
-    /* Estilos Gerais */
     h1, h2, h3, h4 { text-align: center; color: #2c3e50; margin-bottom: 15px; }
     .btn { background: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; margin-top: 10px; }
     .btn:hover { background: #2980b9; }
@@ -29,7 +27,6 @@
     .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
     .input-group input, .input-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
 
-    /* LAYOUT DO JOGO (COLUNA DE SÍLABAS AMPLIADA PARA 300PX) */
     .game-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; margin-top: 20px; }
     .words-column { display: flex; flex-direction: column; gap: 15px; }
     
@@ -43,13 +40,11 @@
     .slot.selected { border: 4px solid #f39c12; background-color: #fef9e7; }
     .slot.filled { background-color: #ebf5fb; border-color: #3498db; }
     
-    /* Estilos pós-finalização */
     .slot.correct { background-color: #d4edda !important; border-color: #28a745 !important; color: #155724; cursor: default; }
     .slot.correct::after { content: "✓"; position: absolute; top: 2px; right: 4px; font-size: 12px; color: #28a745; font-weight: bold; }
     .slot.wrong { background-color: #f8d7da !important; border-color: #dc3545 !important; color: #721c24; cursor: default; }
     .slot.wrong::after { content: "✕"; position: absolute; top: 2px; right: 4px; font-size: 12px; color: #dc3545; font-weight: bold; }
 
-    /* PAINEL LATERAL DE SÍLABAS */
     .sidebar-options { background: #f8f9fa; border: 2px dashed #bdc3c7; border-radius: 8px; padding: 12px 10px; text-align: center; }
     .sidebar-options h3 { font-size: 16px; margin-bottom: 12px; color: #2c3e50; }
     .options-grid { display: grid; grid-template-columns: repeat(4, 55px); gap: 8px; justify-content: center; min-height: 150px; }
@@ -58,7 +53,6 @@
     .option:hover { background-color: #ebf5fb; transform: translateY(-2px); }
     .option.hidden { display: none !important; }
 
-    /* ADMIN & RANKING */
     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
     th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
     th { background-color: #34495e; color: white; }
@@ -72,13 +66,11 @@
     .checkbox-item { display: flex; align-items: center; gap: 10px; font-size: 15px; cursor: pointer; }
     .checkbox-item input { width: 18px; height: 18px; cursor: pointer; }
 
-    /* ESTILOS DA COLOCAÇÃO NO RANKING */
     .pos-badge { font-weight: bold; font-size: 16px; }
-    .pos-1 { color: #d4ac0d; font-size: 18px; } /* Ouro */
-    .pos-2 { color: #7f8c8d; font-size: 17px; } /* Prata */
-    .pos-3 { color: #a0522d; font-size: 16px; } /* Bronze */
+    .pos-1 { color: #d4ac0d; font-size: 18px; }
+    .pos-2 { color: #7f8c8d; font-size: 17px; }
+    .pos-3 { color: #a0522d; font-size: 16px; }
 
-    /* MODAL DE EDIÇÃO */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
     .modal-overlay.active { display: flex; }
     .modal-content { background: white; border-radius: 10px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
@@ -132,13 +124,11 @@
     <div id="admin-tab-create-phase">
       <h3>1. Cadastrar Fase no Banco de Dados</h3>
       <div class="input-group">
-        <label>Nome/Título da Fase (Ex: Fase 1 - Animais, Fase 2 - Frutas):</label>
+        <label>Nome/Título da Fase (Ex: Fase 1 - Animais):</label>
         <input type="text" id="phase-title-input" placeholder="Digite um nome de identificação para esta fase">
       </div>
       
-      <div id="words-form-container">
-        <!-- 4 Palavras da fase -->
-      </div>
+      <div id="words-form-container"></div>
 
       <button class="btn btn-success" onclick="saveNewPhaseToBank()">Salvar Fase no Banco</button>
     </div>
@@ -157,9 +147,7 @@
 
       <div class="input-group">
         <label>Marque as Fases que farão parte deste Jogo/PIN:</label>
-        <div id="available-phases-checkboxes" class="checkbox-list">
-          <!-- Checkboxes de fases cadastradas -->
-        </div>
+        <div id="available-phases-checkboxes" class="checkbox-list"></div>
       </div>
 
       <button class="btn btn-success" onclick="createGameWithSelectedPhases()">Gerar Jogo para a Turma</button>
@@ -225,10 +213,8 @@
     <h2>Clique no campo e escolha a sílaba correta:</h2>
 
     <div class="game-layout">
-      <!-- Coluna da Esquerda: As 4 palavras da fase -->
       <div class="words-column" id="game-words-column"></div>
 
-      <!-- Coluna da Direita: Painel único de sílabas (4 por linha) -->
       <div class="sidebar-options">
         <h3>Opções de Sílabas</h3>
         <div class="options-grid" id="game-sidebar-options"></div>
@@ -249,7 +235,6 @@
 
 </div>
 
-<!-- MODAL DE EDIÇÃO DE FASE DO BANCO -->
 <div id="edit-modal" class="modal-overlay">
   <div class="modal-content">
     <h2>✏️ Editar Conteúdo da Fase</h2>
@@ -266,24 +251,19 @@
 </div>
 
 <script>
-  // BANCO DE DADOS LOCAL (LocalStorage)
   let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["1º Ano A", "1º Ano B", "Infantil V"];
   let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phase_bank")) || []; 
   let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {}; 
   let dbRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
 
-  // ESTADO DA SESSÃO ATUAL
   let currentGame = null;
   let currentPhaseIndex = 0;
   let currentStudent = { name: "", pin: "", className: "" };
   let selectedSlot = null;
   let totalScore = 0;
   let phaseFinished = false;
-
-  // ESTADO DE EDIÇÃO ATUAL
   let editingPhaseId = null;
 
-  // NAVEGAÇÃO DE TELAS
   function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
@@ -307,7 +287,7 @@
     });
   }
 
-  // --- ÁREA DO ALUNO ---
+  // LOGICA PRINCIPAL DE LOGIN E ACESSO AO JOGO
   function startStudentGame() {
     const inputPin = document.getElementById("player-pin").value.trim().toUpperCase();
     const name = document.getElementById("player-name").value.trim();
@@ -317,22 +297,31 @@
       return;
     }
 
-    // Busca o PIN ignorando maiúsculas e minúsculas
+    // Busca a chave do PIN ignorando case
     const matchedPinKey = Object.keys(dbGames).find(key => key.toUpperCase() === inputPin);
 
-    if (!matchedPinKey || !dbGames[matchedPinKey] || !dbGames[matchedPinKey].phaseIds || dbGames[matchedPinKey].phaseIds.length === 0) {
-      alert("PIN não encontrado ou este jogo não possui fases associadas!");
+    if (!matchedPinKey || !dbGames[matchedPinKey]) {
+      alert("PIN não encontrado! Verifique o código digitado.");
       return;
     }
 
     const gameData = dbGames[matchedPinKey];
-    
-    const activePhases = gameData.phaseIds
-      .map(id => dbPhaseBank.find(p => p.id === id))
-      .filter(p => p !== undefined);
+    let activePhases = [];
+
+    // Tenta encontrar as fases pelos IDs cadastrados
+    if (gameData.phaseIds && gameData.phaseIds.length > 0) {
+      activePhases = gameData.phaseIds
+        .map(id => dbPhaseBank.find(p => p.id === id))
+        .filter(p => p !== undefined);
+    }
+
+    // CONTINGÊNCIA: Se não achou por ID (devido a atualizações antigas), carrega todas as fases ativas no banco
+    if (activePhases.length === 0 && dbPhaseBank.length > 0) {
+      activePhases = [...dbPhaseBank];
+    }
 
     if (activePhases.length === 0) {
-      alert("As fases deste jogo parecem ter sido excluídas!");
+      alert("Este jogo não possui fases associadas no momento. Peça ao professor para salvar uma fase e recriar o PIN!");
       return;
     }
 
@@ -518,7 +507,6 @@
     showScreen("screen-finish");
   }
 
-  // --- ÁREA DO ADMINISTRADOR ---
   function loginAdmin() {
     const pass = document.getElementById("admin-pass").value;
     if (pass === "admin" || pass === "1234") {
@@ -615,7 +603,7 @@
     }
 
     const newPhaseObj = {
-      id: "phase_" + Date.now(),
+      id: "phase_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
       title: title,
       words: wordsList
     };
@@ -623,7 +611,7 @@
     dbPhaseBank.push(newPhaseObj);
     localStorage.setItem("syllable_phase_bank", JSON.stringify(dbPhaseBank));
     
-    alert(`Fase "${title}" cadastrada no Banco de Fases com sucesso! Agora você pode vinculá-la a uma turma na aba '2. Criar Jogo p/ Turma'.`);
+    alert(`Fase "${title}" cadastrada com sucesso!`);
     document.getElementById("phase-title-input").value = "";
     renderAdminForm();
   }
@@ -641,7 +629,7 @@
       const wordsPreview = phase.words.map(w => w.syllables.join("")).join(", ");
       container.innerHTML += `
         <label class="checkbox-item">
-          <input type="checkbox" value="${phase.id}" class="phase-checkbox">
+          <input type="checkbox" value="${phase.id}" class="phase-checkbox" checked>
           <span><strong>${phase.title || 'Fase ' + (idx + 1)}</strong> — Palavras: [${wordsPreview}]</span>
         </label>
       `;
@@ -669,25 +657,24 @@
     };
 
     localStorage.setItem("syllable_games", JSON.stringify(dbGames));
-    alert(`Jogo cadastrado! PIN: ${pin} | Turma: ${className} | Total de Fases: ${selectedPhaseIds.length}`);
+    alert(`Jogo cadastrado! PIN: ${pin} | Turma: ${className}`);
     document.getElementById("new-pin").value = "";
   }
 
-  // --- GERENCIAMENTO DE JOGOS E FASES BANCO ---
   function renderManageGamesAndPhases() {
     const gamesContainer = document.getElementById("games-manage-list");
     gamesContainer.innerHTML = "";
 
     const pins = Object.keys(dbGames);
     if (pins.length === 0) {
-      gamesContainer.innerHTML = "<p>Nenum jogo/PIN configurado para turmas no momento.</p>";
+      gamesContainer.innerHTML = "<p>Nenhum jogo/PIN configurado para turmas no momento.</p>";
     } else {
       pins.forEach(pin => {
         const g = dbGames[pin];
-        const phaseNames = g.phaseIds.map(id => {
+        const phaseNames = g.phaseIds ? g.phaseIds.map(id => {
           const found = dbPhaseBank.find(p => p.id === id);
-          return found ? found.title : "Fase Removida";
-        }).join(" | ");
+          return found ? found.title : "Fase Cadastrada";
+        }).join(" | ") : "Todas as fases ativas";
 
         gamesContainer.innerHTML += `
           <div class="phase-card">
@@ -823,14 +810,13 @@
   }
 
   function deleteBankPhase(phaseId) {
-    if (confirm("Tem certeza que deseja excluir esta fase do banco? Ela deixará de aparecer nos jogos associados.")) {
+    if (confirm("Tem certeza que deseja excluir esta fase do banco?")) {
       dbPhaseBank = dbPhaseBank.filter(p => p.id !== phaseId);
       localStorage.setItem("syllable_phase_bank", JSON.stringify(dbPhaseBank));
       renderManageGamesAndPhases();
     }
   }
 
-  // --- GERENCIAMENTO DE TURMAS ---
   function renderClassesList() {
     const list = document.getElementById("classes-list");
     list.innerHTML = "";
@@ -880,7 +866,6 @@
     }
   }
 
-  // --- RANKING (COM COLOCAÇÃO) ---
   function renderRankingTable() {
     const filterSelect = document.getElementById("rank-filter-pin");
     const pins = Object.keys(dbGames);
@@ -901,7 +886,6 @@
       filteredRankings = dbRankings.filter(r => r.pin.toUpperCase() === selectedPin.toUpperCase());
     }
 
-    // Ordenar do maior para o menor resultado
     filteredRankings.sort((a, b) => b.score - a.score);
 
     if (filteredRankings.length === 0) {
@@ -913,7 +897,6 @@
       const position = index + 1;
       let posDisplay = "";
 
-      // Definição das medalhas e visual por colocação
       if (position === 1) {
         posDisplay = '<span class="pos-badge pos-1">🥇 1º</span>';
       } else if (position === 2) {
