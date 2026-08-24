@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jogo das Sílabas - Múltiplas Fases</title>
+  <title>Jogo das Sílabas - Painel & Aluno</title>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
     body { background-color: #f4f7f6; color: #333; padding: 20px; display: flex; justify-content: center; }
@@ -11,6 +11,10 @@
     
     .screen { display: none; }
     .screen.active { display: block; }
+
+    nav { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    nav button { flex: 1; padding: 10px; border: none; background: #e0e0e0; font-weight: bold; cursor: pointer; border-radius: 6px; }
+    nav button.active { background: #3498db; color: white; }
 
     h1, h2, h3 { text-align: center; color: #2c3e50; margin-bottom: 15px; }
     .btn { background: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; margin-top: 10px; }
@@ -43,72 +47,98 @@
     .option.hidden { display: none !important; }
 
     .badge { padding: 8px 15px; border-radius: 6px; background: #3498db; color: white; font-size: 15px; font-weight: bold; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    table th, table td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+    table th { background: #f2f2f2; }
   </style>
 </head>
 <body>
 
 <div class="container">
 
-  <!-- TELA 1: ENTRADA -->
-  <div id="screen-login" class="screen active">
-    <h1>🧩 Jogo das Sílabas</h1>
-    <p style="text-align: center; color: #666; margin-bottom: 20px;">Preencha seus dados para começar:</p>
-    
+  <nav id="top-nav">
+    <button class="active" onclick="switchMode('student')">Acesso do Aluno</button>
+    <button onclick="switchMode('teacher')">Painel do Professor</button>
+  </nav>
+
+  <!-- TELA 1: LOGIN ALUNO -->
+  <div id="screen-student-login" class="screen active">
+    <h1>🎮 Área do Aluno</h1>
     <div class="input-group">
       <label>Nome do Aluno:</label>
       <input type="text" id="player-name" placeholder="Digite seu nome">
     </div>
-
     <div class="input-group">
-      <label>Selecione a Turma:</label>
-      <select id="player-class">
-        <option value="Infantil V">Infantil V</option>
-        <option value="1º Ano A">1º Ano A</option>
-        <option value="1º Ano B">1º Ano B</option>
-      </select>
+      <label>PIN da Turma / Jogo:</label>
+      <input type="text" id="player-pin" placeholder="Ex: AGO1" style="text-transform: uppercase;">
     </div>
-
-    <button class="btn btn-success" onclick="startGame()">Start / Iniciar 🚀</button>
+    <button class="btn btn-success" onclick="startStudentGame()">Entrar no Jogo 🚀</button>
   </div>
 
-  <!-- TELA 2: JOGO -->
+  <!-- TELA 2: TELA DO JOGO -->
   <div id="screen-game" class="screen">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
       <span class="badge" id="info-student">Aluno: -</span>
       <span class="badge" style="background:#e67e22;" id="info-phase">Fase 1</span>
     </div>
-
     <h2>Escolha a sílaba correta para cada imagem:</h2>
-
     <div class="game-layout">
       <div class="words-column" id="words-container"></div>
-
       <div class="sidebar-options">
         <h3>Opções</h3>
         <div class="options-grid" id="options-container"></div>
       </div>
     </div>
-
     <button class="btn btn-success" id="btn-next" style="margin-top:25px;" onclick="checkAnswers()">Concluir Fase 🏆</button>
   </div>
 
-  <!-- TELA 3: FINALIZAÇÃO DA ATIVIDADE -->
+  <!-- TELA 3: FINALIZAÇÃO -->
   <div id="screen-finish" class="screen" style="text-align: center;">
     🎉
-    <h2>Parabéns! Você concluiu todas as fases!</h2>
+    <h2>Parabéns! Você concluiu a atividade!</h2>
     <p style="font-size: 22px; margin: 20px 0;">Sua pontuação total: <strong id="final-score" style="color:#2ecc71;">0</strong> acertos!</p>
-    <button class="btn" onclick="location.reload()" style="max-width: 300px; margin: 0 auto;">Jogar Novamente</button>
+    <button class="btn" onclick="switchMode('student')">Voltar ao Inicio</button>
+  </div>
+
+  <!-- TELA 4: PAINEL DO PROFESSOR -->
+  <div id="screen-teacher-panel" class="screen">
+    <h1>⚙️ Painel do Professor</h1>
+    
+    <div style="background: #eef9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+      <h3>📌 Criar Nova Fase / Editar Fase</h3>
+      <div class="input-group">
+        <label>PIN para esta fase (ex: AGO1):</label>
+        <input type="text" id="cfg-pin" value="AGO1" style="text-transform: uppercase;">
+      </div>
+
+      <div id="cfg-words-container"></div>
+
+      <button class="btn btn-success" onclick="savePhaseConfig()">Salvar Fase no Sistema 💾</button>
+    </div>
+
+    <h3>🏆 Ranking dos Alunos (Salvo Neste Navegador)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Aluno</th>
+          <th>PIN / Turma</th>
+          <th>Pontuação</th>
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody id="ranking-body"></tbody>
+    </table>
   </div>
 
 </div>
 
 <script>
   // =========================================================================
-  // BANCO DE FASES DO JOGO (ADICIONE OU EDITE QUANTAS FASES QUISER AQUI)
+  // BANCO DE DADOS DE FASES (USANDO AS IMAGENS DA PASTA "imagens/")
   // =========================================================================
-  const GAME_PHASES = [
-    // FASE 1
-    {
+  let dbGames = JSON.parse(localStorage.getItem("dbGames")) || {
+    "AGO1": {
       title: "Fase 1",
       words: [
         { name: "COPO", syllables: ["CO", "PO"], options: ["PA", "TA"], img: "imagens/copo.png" },
@@ -116,53 +146,58 @@
         { name: "CAFE", syllables: ["CA", "FÉ"], options: ["TE", "VE"], img: "imagens/cafe.png" },
         { name: "RATO", syllables: ["RA", "TO"], options: ["NE", "LO"], img: "imagens/rato.png" }
       ]
-    },
-    // FASE 2 (EXEMPLO)
-    {
-      title: "Fase 2",
-      words: [
-        { name: "BOTA", syllables: ["BO", "TA"], options: ["LO", "MA"], img: "imagens/bota.png" },
-        { name: "CAMA", syllables: ["CA", "MA"], options: ["PA", "TE"], img: "imagens/cama.png" },
-        { name: "NEVE", syllables: ["NE", "VE"], options: ["SO", "FA"], img: "imagens/rato.png" },
-        { name: "SOFA", syllables: ["SO", "FÁ"], options: ["BO", "TA"], img: "imagens/sofá.png" }
-      ]
     }
-  ];
+  };
 
-  let currentPhaseIndex = 0;
-  let totalScore = 0;
+  let ranking = JSON.parse(localStorage.getItem("ranking")) || [];
+
+  let currentStudent = {};
+  let currentPhaseData = null;
   let selectedSlot = null;
   let isFinished = false;
 
-  function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+  function switchMode(mode) {
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+
+    if (mode === "student") {
+      document.querySelectorAll("nav button")[0].classList.add("active");
+      document.getElementById("screen-student-login").classList.add("active");
+    } else {
+      document.querySelectorAll("nav button")[1].classList.add("active");
+      document.getElementById("screen-teacher-panel").classList.add("active");
+      loadTeacherPanel();
+    }
   }
 
-  function shuffle(array) {
-    return [...array].sort(() => Math.random() - 0.5);
-  }
-
-  function startGame() {
+  function startStudentGame() {
     const name = document.getElementById("player-name").value.trim();
-    if (!name) { alert("Por favor, informe seu nome!"); return; }
+    const pin = document.getElementById("player-pin").value.trim().toUpperCase();
+
+    if (!name || !pin) {
+      alert("Por favor, preencha seu nome e o PIN da turma!");
+      return;
+    }
+
+    if (!dbGames[pin]) {
+      alert("PIN não encontrado! Tente 'AGO1'.");
+      return;
+    }
+
+    currentStudent = { name, pin };
+    currentPhaseData = dbGames[pin];
 
     document.getElementById("info-student").innerText = `Aluno: ${name}`;
-    currentPhaseIndex = 0;
-    totalScore = 0;
+    document.getElementById("info-phase").innerText = `Fase PIN: ${pin}`;
 
-    loadPhase(currentPhaseIndex);
-    showScreen("screen-game");
+    loadGameScreen();
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById("screen-game").classList.add("active");
   }
 
-  function loadPhase(phaseIdx) {
+  function loadGameScreen() {
     isFinished = false;
     selectedSlot = null;
-    const phaseData = GAME_PHASES[phaseIdx];
-
-    document.getElementById("info-phase").innerText = `${phaseData.title} (${phaseIdx + 1} de ${GAME_PHASES.length})`;
-    document.getElementById("btn-next").innerText = phaseIdx + 1 < GAME_PHASES.length ? "Avançar para Próxima Fase ➡️" : "Finalizar Jogo 🏆";
-
     const wordsContainer = document.getElementById("words-container");
     const optionsContainer = document.getElementById("options-container");
     wordsContainer.innerHTML = "";
@@ -170,13 +205,13 @@
 
     let allOptions = [];
 
-    phaseData.words.forEach((item, wIdx) => {
+    currentPhaseData.words.forEach((item, wIdx) => {
       allOptions.push(...item.syllables, ...item.options);
 
       const row = document.createElement("div");
       row.className = "word-row";
       row.innerHTML = `
-        <div class="img-box"><img src="${item.img}"></div>
+        <div class="img-box"><img src="${item.img}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2405/2405479.png'"></div>
         <div class="slots-container">
           ${item.syllables.map((_, sIdx) => `<div class="slot" data-word="${wIdx}" data-slot="${sIdx}" onclick="selectSlot(this)"></div>`).join('')}
         </div>
@@ -184,7 +219,7 @@
       wordsContainer.appendChild(row);
     });
 
-    shuffle(allOptions).forEach((syl, idx) => {
+    [...allOptions].sort(() => Math.random() - 0.5).forEach((syl, idx) => {
       const opt = document.createElement("div");
       opt.className = "option";
       opt.innerText = syl;
@@ -226,18 +261,16 @@
 
   function checkAnswers() {
     if (isFinished) return;
-
-    let phaseScore = 0;
+    let score = 0;
     isFinished = true;
-    const phaseData = GAME_PHASES[currentPhaseIndex];
 
-    phaseData.words.forEach((item, wIdx) => {
+    currentPhaseData.words.forEach((item, wIdx) => {
       item.syllables.forEach((syl, sIdx) => {
         const slot = document.querySelector(`.slot[data-word="${wIdx}"][data-slot="${sIdx}"]`);
         if (slot) {
           if (slot.innerText.trim() === syl) {
             slot.classList.add("correct");
-            phaseScore++;
+            score++;
           } else {
             slot.classList.add("wrong");
           }
@@ -245,17 +278,83 @@
       });
     });
 
-    totalScore += phaseScore;
+    // Salva no Ranking
+    ranking.push({
+      name: currentStudent.name,
+      pin: currentStudent.pin,
+      score: score,
+      date: new Date().toLocaleDateString("pt-BR")
+    });
+    localStorage.setItem("ranking", JSON.stringify(ranking));
 
     setTimeout(() => {
-      if (currentPhaseIndex + 1 < GAME_PHASES.length) {
-        currentPhaseIndex++;
-        loadPhase(currentPhaseIndex);
-      } else {
-        document.getElementById("final-score").innerText = totalScore;
-        showScreen("screen-finish");
-      }
+      document.getElementById("final-score").innerText = score;
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      document.getElementById("screen-finish").classList.add("active");
     }, 1500);
+  }
+
+  // --- PAINEL DO PROFESSOR ---
+  function loadTeacherPanel() {
+    const pin = document.getElementById("cfg-pin").value.toUpperCase();
+    const phase = dbGames[pin] || dbGames["AGO1"];
+    const container = document.getElementById("cfg-words-container");
+    container.innerHTML = "";
+
+    phase.words.forEach((item, idx) => {
+      const box = document.createElement("div");
+      box.style.cssText = "border:1px solid #ccc; padding:10px; border-radius:6px; margin-bottom:10px; background:#fff;";
+      box.innerHTML = `
+        <h4>Palavra ${idx + 1}</h4>
+        <div class="input-group">
+          <label>Nome / Sílabas Separadas (Ex: CO-PO):</label>
+          <input type="text" id="cfg-syl-${idx}" value="${item.syllables.join('-')}">
+        </div>
+        <div class="input-group">
+          <label>Caminho da Imagem na Pasta (Ex: imagens/copo.png):</label>
+          <input type="text" id="cfg-img-${idx}" value="${item.img}">
+        </div>
+      `;
+      container.appendChild(box);
+    });
+
+    renderRanking();
+  }
+
+  function savePhaseConfig() {
+    const pin = document.getElementById("cfg-pin").value.trim().toUpperCase();
+    if (!pin) { alert("Digite um PIN!"); return; }
+
+    let newWords = [];
+    for (let i = 0; i < 4; i++) {
+      const sylVal = document.getElementById(`cfg-syl-${i}`)?.value.split("-") || ["PA", "LAVRA"];
+      const imgVal = document.getElementById(`cfg-img-${i}`)?.value || "imagens/copo.png";
+      newWords.push({
+        name: sylVal.join(""),
+        syllables: sylVal,
+        options: ["TA", "BO"],
+        img: imgVal
+      });
+    }
+
+    dbGames[pin] = { title: `Fase ${pin}`, words: newWords };
+    localStorage.setItem("dbGames", JSON.stringify(dbGames));
+    alert(`Fase com o PIN "${pin}" salva com sucesso!`);
+  }
+
+  function renderRanking() {
+    const tbody = document.getElementById("ranking-body");
+    tbody.innerHTML = "";
+    ranking.forEach(r => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${r.name}</td>
+          <td>${r.pin}</td>
+          <td>${r.score} acertos</td>
+          <td>${r.date}</td>
+        </tr>
+      `;
+    });
   }
 </script>
 
