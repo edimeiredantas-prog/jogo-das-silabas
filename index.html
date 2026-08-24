@@ -252,9 +252,23 @@
 </div>
 
 <script>
-  let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["1º Ano A", "1º Ano B", "Infantil V"];
-  let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phase_bank")) || []; 
-  let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {}; 
+  // FASE PADRÃO EMBUTIDA NO CÓDIGO (Visível em qualquer dispositivo)
+  const DEFAULT_PHASE = {
+    id: "default_phase_1",
+    title: "Fase 1",
+    words: [
+      { name: "NEVE", syllables: ["NE", "VE"], options: ["MA", "LO"], img: "https://cdn-icons-png.flaticon.com/512/2336/2336319.png" },
+      { name: "CAMA", syllables: ["CA", "MA"], options: ["BO", "TA"], img: "https://cdn-icons-png.flaticon.com/512/3028/3028328.png" },
+      { name: "SOFA", syllables: ["SO", "FÁ"], options: ["PA", "TE"], img: "https://cdn-icons-png.flaticon.com/512/2258/2258416.png" },
+      { name: "BOTA", syllables: ["BO", "TA"], options: ["CA", "NE"], img: "https://cdn-icons-png.flaticon.com/512/2589/2589903.png" }
+    ]
+  };
+
+  let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["Infantil V", "1º Ano A", "1º Ano B"];
+  let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phase_bank")) || [DEFAULT_PHASE]; 
+  let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {
+    "1234": { className: "Infantil V", phaseIds: ["default_phase_1"] }
+  }; 
   let dbRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
 
   let currentGame = null;
@@ -299,34 +313,30 @@
 
     const searchPin = String(rawPin).toUpperCase();
     
-    // Busca flexível do PIN no LocalStorage
-    let matchedKey = Object.keys(dbGames).find(key => String(key).toUpperCase() === searchPin);
+    // Busca o PIN criado ou usa o padrão 1234
+    let gameData = dbGames[searchPin];
+    if (!gameData && searchPin === "1234") {
+      gameData = { className: "Infantil V", phaseIds: ["default_phase_1"] };
+    }
 
-    if (!matchedKey || !dbGames[matchedKey]) {
-      alert("PIN não encontrado! Verifique o código digitado ou crie o jogo novamente no Painel do Professor.");
+    if (!gameData) {
+      alert("PIN não encontrado! Verifique se digitou corretamente.");
       return;
     }
 
-    const gameData = dbGames[matchedKey];
     let activePhases = [];
-
     if (gameData.phaseIds && gameData.phaseIds.length > 0) {
       activePhases = gameData.phaseIds
         .map(id => dbPhaseBank.find(p => String(p.id) === String(id)))
         .filter(p => p !== undefined);
     }
 
-    // Fallback: Se não encontrou fases por ID, carrega todas as fases cadastradas
-    if (activePhases.length === 0 && dbPhaseBank.length > 0) {
-      activePhases = [...dbPhaseBank];
-    }
-
+    // Fallback: garante que se não achar pelo ID, usa a fase padrão
     if (activePhases.length === 0) {
-      alert("Este jogo não possui fases associadas no momento.");
-      return;
+      activePhases = [DEFAULT_PHASE];
     }
 
-    currentStudent = { name, pin: searchPin, className: gameData.className || "Não Informada" };
+    currentStudent = { name, pin: searchPin, className: gameData.className || "Infantil V" };
     currentGame = activePhases;
     currentPhaseIndex = 0;
     totalScore = 0;
@@ -622,7 +632,7 @@
     container.innerHTML = "";
 
     if (dbPhaseBank.length === 0) {
-      container.innerHTML = "<p style='color:#777;'>Nenhuma fase cadastrada no banco. Cadastre fases na aba '1. Cadastrar Fase' primeiro!</p>";
+      container.innerHTML = "<p style='color:#777;'>Nenhuma fase cadastrada no banco.</p>";
       return;
     }
 
@@ -649,7 +659,7 @@
     const selectedPhaseIds = Array.from(checkedBoxes).map(cb => String(cb.value));
 
     if (selectedPhaseIds.length === 0) {
-      alert("Selecione pelo menos 1 fase para incluir neste jogo!");
+      alert("Selecione pelo menos 1 fase!");
       return;
     }
 
@@ -669,7 +679,7 @@
 
     const pins = Object.keys(dbGames);
     if (pins.length === 0) {
-      gamesContainer.innerHTML = "<p>Nenhum jogo/PIN configurado para turmas no momento.</p>";
+      gamesContainer.innerHTML = "<p>Nenhum jogo/PIN configurado no momento.</p>";
     } else {
       pins.forEach(pin => {
         const g = dbGames[pin];
@@ -721,12 +731,12 @@
   }
 
   function resetAllData() {
-    if (confirm("Isto apagará todos os PINs e Fases cadastradas neste navegador. Deseja redefinir?")) {
+    if (confirm("Isto redefinirá os dados salvos para os padrões iniciais. Deseja continuar?")) {
       localStorage.clear();
-      dbPhaseBank = [];
-      dbGames = {};
+      dbPhaseBank = [DEFAULT_PHASE];
+      dbGames = { "1234": { className: "Infantil V", phaseIds: ["default_phase_1"] } };
       dbRankings = [];
-      alert("Todos os dados foram redefinidos! Crie uma nova fase e um novo PIN.");
+      alert("Dados redefinidos com sucesso!");
       location.reload();
     }
   }
