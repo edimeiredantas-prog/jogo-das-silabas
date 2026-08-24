@@ -86,7 +86,7 @@
     <h1>🎮 Jogo das Sílabas</h1>
     <div class="input-group">
       <label>PIN do Jogo:</label>
-      <input type="text" id="player-pin" placeholder="Ex: 1234" style="text-transform: uppercase;">
+      <input type="text" id="player-pin" placeholder="Digite o PIN (ex: AGO1)" style="text-transform: uppercase;">
     </div>
     <div class="input-group">
       <label>Seu Nome (máximo 15 caracteres):</label>
@@ -137,7 +137,7 @@
     <div id="admin-tab-assign-game" style="display:none;">
       <h3>2. Criar Jogo (PIN) para uma Turma</h3>
       <div class="input-group">
-        <label>Defina o PIN do Jogo (ex: 1234, AGO1):</label>
+        <label>Defina o PIN do Jogo (ex: AGO1, 1234):</label>
         <input type="text" id="new-pin" placeholder="Ex: AGO1" style="text-transform: uppercase;">
       </div>
       <div class="input-group">
@@ -252,23 +252,36 @@
 </div>
 
 <script>
-  // FASE PADRÃO EMBUTIDA NO CÓDIGO
-  const DEFAULT_PHASE = {
-    id: "default_phase_1",
+  // =========================================================================
+  // FASES E PINS FIXOS DIRETO NO CÓDIGO (FUNCIONA EM QUALQUER COMPUTADOR/DISPOSITIVO)
+  // =========================================================================
+
+  // FASE 1: COPO, MOLA, CAFÉ, RATO
+  const PHASE_AGO1 = {
+    id: "phase_ago1",
     title: "Fase 1",
     words: [
-      { name: "NEVE", syllables: ["NE", "VE"], options: ["MA", "LO"], img: "https://cdn-icons-png.flaticon.com/512/2336/2336319.png" },
-      { name: "CAMA", syllables: ["CA", "MA"], options: ["BO", "TA"], img: "https://cdn-icons-png.flaticon.com/512/3028/3028328.png" },
-      { name: "SOFA", syllables: ["SO", "FÁ"], options: ["PA", "TE"], img: "https://cdn-icons-png.flaticon.com/512/2258/2258416.png" },
-      { name: "BOTA", syllables: ["BO", "TA"], options: ["CA", "NE"], img: "https://cdn-icons-png.flaticon.com/512/2589/2589903.png" }
+      { name: "COPO", syllables: ["CO", "PO"], options: ["MA", "TA"], img: "https://cdn-icons-png.flaticon.com/512/2405/2405479.png" },
+      { name: "MOLA", syllables: ["MO", "LA"], options: ["PA", "TE"], img: "https://cdn-icons-png.flaticon.com/512/3076/3076930.png" },
+      { name: "CAFE", syllables: ["CA", "FÉ"], options: ["BO", "NE"], img: "https://cdn-icons-png.flaticon.com/512/2935/2935307.png" },
+      { name: "RATO", syllables: ["RA", "TO"], options: ["VE", "LO"], img: "https://cdn-icons-png.flaticon.com/512/616/616408.png" }
     ]
   };
 
+  // FASE PADRÃO DENTRO DO CÓDIGO
+  const DEFAULT_PHASE = PHASE_AGO1;
+
+  // BANCO DE FASES GERAL
+  let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phase_bank")) || [PHASE_AGO1]; 
+
+  // PINS PADRÃO DO SISTEMA (QUALQUER DISPOSITIVO CONSEGUE ACESSAR)
+  const SYSTEM_GAMES = {
+    "AGO1": { className: "Infantil V", phaseIds: ["phase_ago1"] },
+    "1234": { className: "Infantil V", phaseIds: ["phase_ago1"] }
+  };
+
   let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["Infantil V", "1º Ano A", "1º Ano B"];
-  let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phase_bank")) || [DEFAULT_PHASE]; 
-  let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {
-    "1234": { className: "Infantil V", phaseIds: ["default_phase_1"] }
-  }; 
+  let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {};
   let dbRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
 
   let currentGame = null;
@@ -313,10 +326,8 @@
 
     const searchPin = String(rawPin).toUpperCase();
     
-    let gameData = dbGames[searchPin];
-    if (!gameData && searchPin === "1234") {
-      gameData = { className: "Infantil V", phaseIds: ["default_phase_1"] };
-    }
+    // Procura primeiro nos PINs do sistema fixo, depois no localStorage
+    let gameData = SYSTEM_GAMES[searchPin] || dbGames[searchPin];
 
     if (!gameData) {
       alert("PIN não encontrado! Verifique se digitou corretamente.");
@@ -326,7 +337,10 @@
     let activePhases = [];
     if (gameData.phaseIds && gameData.phaseIds.length > 0) {
       activePhases = gameData.phaseIds
-        .map(id => dbPhaseBank.find(p => String(p.id) === String(id)))
+        .map(id => {
+          if (id === "phase_ago1") return PHASE_AGO1;
+          return dbPhaseBank.find(p => String(p.id) === String(id));
+        })
         .filter(p => p !== undefined);
     }
 
@@ -675,26 +689,31 @@
     const gamesContainer = document.getElementById("games-manage-list");
     gamesContainer.innerHTML = "";
 
-    const pins = Object.keys(dbGames);
+    const allGames = { ...SYSTEM_GAMES, ...dbGames };
+    const pins = Object.keys(allGames);
+
     if (pins.length === 0) {
       gamesContainer.innerHTML = "<p>Nenhum jogo/PIN configurado no momento.</p>";
     } else {
       pins.forEach(pin => {
-        const g = dbGames[pin];
+        const g = allGames[pin];
         const phaseNames = g.phaseIds ? g.phaseIds.map(id => {
+          if (id === "phase_ago1") return PHASE_AGO1.title;
           const found = dbPhaseBank.find(p => String(p.id) === String(id));
           return found ? found.title : "Fase Cadastrada";
         }).join(" | ") : "Todas as fases ativas";
+
+        const isSystem = SYSTEM_GAMES[pin] !== undefined;
 
         gamesContainer.innerHTML += `
           <div class="phase-card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
               <div>
-                <h4 style="margin:0;">PIN: ${String(pin).toUpperCase()} | Turma: ${g.className}</h4>
+                <h4 style="margin:0;">PIN: ${String(pin).toUpperCase()} | Turma: ${g.className} ${isSystem ? '<span style="font-size:12px; color:#27ae60;">(Padrão)</span>' : ''}</h4>
                 <p style="font-size:14px; color:#555; margin-top:5px;"><strong>Fases Incluídas:</strong> ${phaseNames}</p>
               </div>
               <div>
-                <button class="btn btn-danger btn-small" onclick="deleteGame('${pin}')">🗑️ Excluir Jogo</button>
+                ${!isSystem ? `<button class="btn btn-danger btn-small" onclick="deleteGame('${pin}')">🗑️ Excluir Jogo</button>` : ''}
               </div>
             </div>
           </div>
@@ -710,16 +729,18 @@
     } else {
       dbPhaseBank.forEach((p, idx) => {
         const wordsStr = p.words.map(w => w.syllables.join("")).join(", ");
+        const isSystemPhase = p.id === "phase_ago1";
+
         bankContainer.innerHTML += `
           <div class="phase-card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
               <div>
-                <h4 style="margin:0;">${p.title || 'Fase ' + (idx + 1)}</h4>
+                <h4 style="margin:0;">${p.title || 'Fase ' + (idx + 1)} ${isSystemPhase ? '<span style="font-size:12px; color:#27ae60;">(Padrão Fixa)</span>' : ''}</h4>
                 <p style="font-size:14px; color:#555; margin-top:5px;"><strong>Palavras:</strong> [${wordsStr}]</p>
               </div>
               <div>
                 <button class="btn btn-warning btn-small" onclick="openEditPhaseModal('${p.id}')">✏️ Editar Conteúdo</button>
-                <button class="btn btn-danger btn-small" onclick="deleteBankPhase('${p.id}')">🗑️ Excluir Fase</button>
+                ${!isSystemPhase ? `<button class="btn btn-danger btn-small" onclick="deleteBankPhase('${p.id}')">🗑️ Excluir Fase</button>` : ''}
               </div>
             </div>
           </div>
@@ -747,8 +768,8 @@
   function resetAllData() {
     if (confirm("Isto redefinirá os dados salvos para os padrões iniciais. Deseja continuar?")) {
       localStorage.clear();
-      dbPhaseBank = [DEFAULT_PHASE];
-      dbGames = { "1234": { className: "Infantil V", phaseIds: ["default_phase_1"] } };
+      dbPhaseBank = [PHASE_AGO1];
+      dbGames = {};
       dbRankings = [];
       alert("Dados redefinidos com sucesso!");
       location.reload();
@@ -757,7 +778,7 @@
 
   function openEditPhaseModal(phaseId) {
     editingPhaseId = phaseId;
-    const phase = dbPhaseBank.find(p => String(p.id) === String(phaseId));
+    let phase = phaseId === "phase_ago1" ? PHASE_AGO1 : dbPhaseBank.find(p => String(p.id) === String(phaseId));
     if (!phase) return;
 
     document.getElementById("edit-phase-title").value = phase.title || "";
@@ -803,7 +824,7 @@
   async function savePhaseEdit() {
     if (!editingPhaseId) return;
 
-    const phase = dbPhaseBank.find(p => String(p.id) === String(editingPhaseId));
+    let phase = editingPhaseId === "phase_ago1" ? PHASE_AGO1 : dbPhaseBank.find(p => String(p.id) === String(editingPhaseId));
     if (!phase) return;
 
     const newTitle = document.getElementById("edit-phase-title").value.trim();
@@ -884,10 +905,12 @@
     const filterSelect = document.getElementById("rank-filter-pin");
     const tbody = document.getElementById("ranking-table-body");
 
-    const pins = Object.keys(dbGames);
+    const allGames = { ...SYSTEM_GAMES, ...dbGames };
+    const pins = Object.keys(allGames);
+
     let optionsHtml = '<option value="ALL">Todos os PINs</option>';
     pins.forEach(pin => {
-      optionsHtml += `<option value="${pin}">${pin} (${dbGames[pin].className})</option>`;
+      optionsHtml += `<option value="${pin}">${pin} (${allGames[pin].className})</option>`;
     });
     filterSelect.innerHTML = optionsHtml;
 
