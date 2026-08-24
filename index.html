@@ -86,7 +86,7 @@
     <h1>🎮 Jogo das Sílabas</h1>
     <div class="input-group">
       <label>PIN do Jogo:</label>
-      <input type="text" id="player-pin" placeholder="Ex: 1234" style="text-transform: uppercase;">
+      <input type="text" id="player-pin" placeholder="Ex: AGO1" style="text-transform: uppercase;">
     </div>
     <div class="input-group">
       <label>Seu Nome (máximo 15 caracteres):</label>
@@ -124,7 +124,7 @@
     <div id="admin-tab-create-phase">
       <h3>1. Cadastrar Fase no Banco de Dados</h3>
       <div class="input-group">
-        <label>Nome/Título da Fase (Ex: Fase 1 - Animais):</label>
+        <label>Nome/Título da Fase (Ex: Fase 1 - Objetos):</label>
         <input type="text" id="phase-title-input" placeholder="Digite um nome de identificação para esta fase">
       </div>
       
@@ -252,22 +252,22 @@
 </div>
 
 <script>
-  // FASE PADRÃO EMBUTIDA NO CÓDIGO
+  // FASE PADRÃO USANDO AS IMAGENS DO SEU REPOSITÓRIO NO GITHUB
   const DEFAULT_PHASE = {
     id: "default_phase_1",
     title: "Fase 1",
     words: [
-      { name: "NEVE", syllables: ["NE", "VE"], options: ["MA", "LO"], img: "https://cdn-icons-png.flaticon.com/512/2336/2336319.png" },
-      { name: "CAMA", syllables: ["CA", "MA"], options: ["BO", "TA"], img: "https://cdn-icons-png.flaticon.com/512/3028/3028328.png" },
-      { name: "SOFA", syllables: ["SO", "FÁ"], options: ["PA", "TE"], img: "https://cdn-icons-png.flaticon.com/512/2258/2258416.png" },
-      { name: "BOTA", syllables: ["BO", "TA"], options: ["CA", "NE"], img: "https://cdn-icons-png.flaticon.com/512/2589/2589903.png" }
+      { name: "COPO", syllables: ["CO", "PO"], options: ["PA", "TA"], img: "imagens/copo.png" },
+      { name: "MOLA", syllables: ["MO", "LA"], options: ["CA", "BO"], img: "imagens/mola.png" },
+      { name: "CAFE", syllables: ["CA", "FÉ"], options: ["TE", "VE"], img: "imagens/cafe.png" },
+      { name: "RATO", syllables: ["RA", "TO"], options: ["NE", "LO"], img: "imagens/rato.png" }
     ]
   };
 
   let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["Infantil V", "1º Ano A", "1º Ano B"];
   let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phase_bank")) || [DEFAULT_PHASE]; 
   let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {
-    "1234": { className: "Infantil V", phaseIds: ["default_phase_1"] }
+    "AGO1": { className: "Infantil V", phaseIds: ["default_phase_1"] }
   }; 
   let dbRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
 
@@ -293,15 +293,6 @@
     return arr;
   }
 
-  function convertFileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = error => reject(error);
-    });
-  }
-
   function startStudentGame() {
     const rawPin = document.getElementById("player-pin").value.trim();
     const name = document.getElementById("player-name").value.trim();
@@ -314,7 +305,7 @@
     const searchPin = String(rawPin).toUpperCase();
     
     let gameData = dbGames[searchPin];
-    if (!gameData && searchPin === "1234") {
+    if (!gameData && searchPin === "AGO1") {
       gameData = { className: "Infantil V", phaseIds: ["default_phase_1"] };
     }
 
@@ -380,6 +371,9 @@
       imgBox.className = "img-box";
       const img = document.createElement("img");
       img.src = item.img;
+      img.onerror = function() {
+        this.src = "https://cdn-icons-png.flaticon.com/512/2405/2405479.png";
+      };
       imgBox.appendChild(img);
       row.appendChild(imgBox);
 
@@ -557,14 +551,16 @@
     const container = document.getElementById("words-form-container");
     container.innerHTML = "";
 
+    const defaultImages = ["imagens/copo.png", "imagens/mola.png", "imagens/cafe.png", "imagens/rato.png"];
+
     for (let i = 0; i < 4; i++) {
       const card = document.createElement("div");
       card.className = "phase-card";
       card.innerHTML = `
         <h4>Palavra ${i + 1}</h4>
         <div class="input-group">
-          <label>Imagem da Palavra (Upload PNG/JPEG):</label>
-          <input type="file" accept="image/*" class="admin-img-file">
+          <label>Caminho da Imagem no GitHub (Ex: imagens/bota.png):</label>
+          <input type="text" class="admin-img-path" value="${defaultImages[i]}" placeholder="Ex: imagens/bota.png">
         </div>
         <div class="input-group">
           <label>Sílabas Corretas (separadas por hífen, ex: SA-PO):</label>
@@ -579,35 +575,30 @@
     }
   }
 
-  async function saveNewPhaseToBank() {
+  function saveNewPhaseToBank() {
     const title = document.getElementById("phase-title-input").value.trim() || `Fase ${dbPhaseBank.length + 1}`;
 
     const correctInputs = document.querySelectorAll(".admin-correct-syl");
     const optionsInputs = document.querySelectorAll(".admin-options-syl");
-    const fileInputs = document.querySelectorAll(".admin-img-file");
+    const pathInputs = document.querySelectorAll(".admin-img-path");
 
     let wordsList = [];
 
     for (let i = 0; i < 4; i++) {
       const correctText = correctInputs[i].value.trim().toUpperCase();
       const optionsText = optionsInputs[i].value.trim().toUpperCase();
-      const file = fileInputs[i].files[0];
+      const imgPath = pathInputs[i].value.trim() || "imagens/copo.png";
 
       if (!correctText) {
         alert(`Preencha as sílabas corretas da Palavra ${i + 1}!`);
         return;
       }
 
-      let imgUrl = "https://cdn-icons-png.flaticon.com/512/33/33736.png";
-      if (file) {
-        imgUrl = await convertFileToBase64(file);
-      }
-
       wordsList.push({
         name: correctText.replace(/-/g, ""),
         syllables: correctText.split("-"),
         options: optionsText ? optionsText.split(",").map(s => s.trim()) : [],
-        img: imgUrl
+        img: imgPath
       });
     }
 
@@ -748,7 +739,7 @@
     if (confirm("Isto redefinirá os dados salvos para os padrões iniciais. Deseja continuar?")) {
       localStorage.clear();
       dbPhaseBank = [DEFAULT_PHASE];
-      dbGames = { "1234": { className: "Infantil V", phaseIds: ["default_phase_1"] } };
+      dbGames = { "AGO1": { className: "Infantil V", phaseIds: ["default_phase_1"] } };
       dbRankings = [];
       alert("Dados redefinidos com sucesso!");
       location.reload();
@@ -773,11 +764,11 @@
         <div style="display:flex; gap:15px; align-items:center; margin-bottom:10px;">
           <div>
             <label style="font-size:12px; display:block;">Imagem Atual:</label>
-            <img src="${w.img}" class="thumb-preview">
+            <img src="${w.img}" class="thumb-preview" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2405/2405479.png'">
           </div>
           <div class="input-group" style="flex:1; margin-bottom:0;">
-            <label>Alterar Imagem (PNG/JPEG):</label>
-            <input type="file" accept="image/*" class="edit-img-file">
+            <label>Caminho da Imagem (GitHub):</label>
+            <input type="text" class="edit-img-path" value="${w.img}">
           </div>
         </div>
         <div class="input-group">
@@ -800,33 +791,27 @@
     editingPhaseId = null;
   }
 
-  async function savePhaseEdit() {
-    if (!editingPhaseId) return;
-
+  function savePhaseEdit() {
     const phase = dbPhaseBank.find(p => String(p.id) === String(editingPhaseId));
     if (!phase) return;
 
-    const newTitle = document.getElementById("edit-phase-title").value.trim();
-    if (newTitle) phase.title = newTitle;
+    phase.title = document.getElementById("edit-phase-title").value.trim() || phase.title;
 
     const correctInputs = document.querySelectorAll(".edit-correct-syl");
     const optionsInputs = document.querySelectorAll(".edit-options-syl");
-    const fileInputs = document.querySelectorAll(".edit-img-file");
+    const pathInputs = document.querySelectorAll(".edit-img-path");
 
     for (let i = 0; i < phase.words.length; i++) {
       const correctText = correctInputs[i].value.trim().toUpperCase();
       const optionsText = optionsInputs[i].value.trim().toUpperCase();
-      const file = fileInputs[i].files[0];
+      const imgPath = pathInputs[i].value.trim();
 
       if (correctText) {
         phase.words[i].name = correctText.replace(/-/g, "");
         phase.words[i].syllables = correctText.split("-");
       }
       phase.words[i].options = optionsText ? optionsText.split(",").map(s => s.trim()) : [];
-
-      if (file) {
-        phase.words[i].img = await convertFileToBase64(file);
-      }
+      if (imgPath) phase.words[i].img = imgPath;
     }
 
     localStorage.setItem("syllable_phase_bank", JSON.stringify(dbPhaseBank));
@@ -837,30 +822,16 @@
 
   function addNewClass() {
     const input = document.getElementById("class-name-input");
-    const className = input.value.trim();
-    if (!className) {
-      alert("Digite o nome da turma!");
-      return;
-    }
-    if (!dbClasses.includes(className)) {
-      dbClasses.push(className);
-      localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
-      input.value = "";
-      renderClassesList();
-      updateClassDropdown();
-      alert(`Turma "${className}" adicionada com sucesso!`);
-    } else {
-      alert("Essa turma já está cadastrada!");
-    }
-  }
+    const name = input.value.trim();
+    if (!name) { alert("Digite o nome da turma!"); return; }
+    if (dbClasses.includes(name)) { alert("Esta turma já existe!"); return; }
 
-  function deleteClass(className) {
-    if (confirm(`Deseja remover a turma "${className}"?`)) {
-      dbClasses = dbClasses.filter(c => c !== className);
-      localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
-      renderClassesList();
-      updateClassDropdown();
-    }
+    dbClasses.push(name);
+    localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
+    input.value = "";
+    renderClassesList();
+    updateClassDropdown();
+    alert(`Turma "${name}" adicionada com sucesso!`);
   }
 
   function renderClassesList() {
@@ -870,58 +841,64 @@
       container.innerHTML = "<p>Nenhuma turma cadastrada.</p>";
       return;
     }
-    dbClasses.forEach(c => {
+    dbClasses.forEach((c, idx) => {
       container.innerHTML += `
         <div class="class-list-item">
           <span><strong>${c}</strong></span>
-          <button class="btn btn-danger btn-small" onclick="deleteClass('${c}')">Excluir</button>
+          <button class="btn btn-danger btn-small" onclick="deleteClass(${idx})">🗑️ Excluir</button>
         </div>
       `;
     });
   }
 
+  function deleteClass(index) {
+    if (confirm(`Deseja excluir a turma "${dbClasses[index]}"?`)) {
+      dbClasses.splice(index, 1);
+      localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
+      renderClassesList();
+      updateClassDropdown();
+    }
+  }
+
   function renderRankingTable() {
-    const filterSelect = document.getElementById("rank-filter-pin");
+    const selectFilter = document.getElementById("rank-filter-pin");
     const tbody = document.getElementById("ranking-table-body");
-
-    const pins = Object.keys(dbGames);
-    let optionsHtml = '<option value="ALL">Todos os PINs</option>';
-    pins.forEach(pin => {
-      optionsHtml += `<option value="${pin}">${pin} (${dbGames[pin].className})</option>`;
+    
+    // Atualiza o select com os PINs existentes
+    const currentSelected = selectFilter.value;
+    selectFilter.innerHTML = '<option value="ALL">Todos os PINs</option>';
+    Object.keys(dbGames).forEach(pin => {
+      selectFilter.innerHTML += `<option value="${pin}">${pin}</option>`;
     });
-    filterSelect.innerHTML = optionsHtml;
-
-    const selectedPin = filterSelect.value || "ALL";
+    selectFilter.value = currentSelected || "ALL";
 
     let filtered = [...dbRankings];
-    if (selectedPin !== "ALL") {
-      filtered = filtered.filter(r => String(r.pin).toUpperCase() === String(selectedPin).toUpperCase());
+    if (selectFilter.value !== "ALL") {
+      filtered = filtered.filter(r => String(r.pin).toUpperCase() === selectFilter.value.toUpperCase());
     }
 
     filtered.sort((a, b) => b.score - a.score);
-
     tbody.innerHTML = "";
+
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="color:#777;">Nenhum resultado registrado ainda.</td></tr>`;
+      tbody.innerHTML = '<tr><td colspan="6">Nenhum registro de jogo encontrado.</td></tr>';
       return;
     }
 
     filtered.forEach((r, idx) => {
-      let posClass = "pos-badge";
-      if (idx === 0) posClass += " pos-1";
-      else if (idx === 1) posClass += " pos-2";
-      else if (idx === 2) posClass += " pos-3";
-
-      const posLabel = idx === 0 ? "🥇 1º" : idx === 1 ? "🥈 2º" : idx === 2 ? "🥉 3º" : `${idx + 1}º`;
+      let posBadge = `<span class="pos-badge">${idx + 1}º</span>`;
+      if (idx === 0) posBadge = `<span class="pos-badge pos-1">🥇 1º</span>`;
+      if (idx === 1) posBadge = `<span class="pos-badge pos-2">🥈 2º</span>`;
+      if (idx === 2) posBadge = `<span class="pos-badge pos-3">🥉 3º</span>`;
 
       tbody.innerHTML += `
         <tr>
-          <td class="${posClass}">${posLabel}</td>
+          <td>${posBadge}</td>
           <td><strong>${r.student}</strong></td>
           <td>${r.className || '-'}</td>
-          <td>${r.pin || '-'}</td>
-          <td><span class="badge" style="background:#2ecc71;">${r.score} pts</span></td>
-          <td style="font-size:13px; color:#666;">${r.date}</td>
+          <td><span class="badge" style="background:#8e44ad;">${r.pin}</span></td>
+          <td><strong>${r.score}</strong> acertos</td>
+          <td>${r.date}</td>
         </tr>
       `;
     });
