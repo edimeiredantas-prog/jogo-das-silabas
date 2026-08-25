@@ -86,7 +86,7 @@
     <h1>🎮 Jogo das Sílabas</h1>
     <div class="input-group">
       <label>PIN do Jogo:</label>
-      <input type="text" id="player-pin" placeholder="Ex: AGO1" style="text-transform: uppercase;">
+      <input type="text" id="player-pin" placeholder="Ex: INF5 ou AGO1" style="text-transform: uppercase;">
     </div>
     <div class="input-group">
       <label>Seu Nome (máximo 15 caracteres):</label>
@@ -138,7 +138,7 @@
       <h3>2. Criar Jogo (PIN) para uma Turma</h3>
       <div class="input-group">
         <label>Defina o PIN do Jogo (ex: 1234, AGO1):</label>
-        <input type="text" id="new-pin" placeholder="Ex: AGO1" style="text-transform: uppercase;">
+        <input type="text" id="new-pin" placeholder="Ex: INF5" style="text-transform: uppercase;">
       </div>
       <div class="input-group">
         <label>Selecione a Turma:</label>
@@ -253,11 +253,20 @@
 </div>
 
 <script>
-  // BANCO COMPLETO DE FASES (1 A 16)
   const DEFAULT_PHASES = [
     {
       id: "phase_1",
       title: "Fase 1",
+      words: [
+        { name: "NEVE", syllables: ["NE", "VE"], options: ["SO", "TE"], img: "imagens/neve.png" },
+        { name: "CAMA", syllables: ["CA", "MA"], options: ["BO", "LO"], img: "imagens/cama.png" },
+        { name: "SOFA", syllables: ["SO", "FÁ"], options: ["MA", "PA"], img: "imagens/sofa.png" },
+        { name: "BOTA", syllables: ["BO", "TA"], options: ["NE", "TA"], img: "imagens/bota.png" }
+      ]
+    },
+    {
+      id: "phase_2",
+      title: "Fase 2",
       words: [
         { name: "COPO", syllables: ["CO", "PO"], options: ["PA", "TA"], img: "imagens/copo.png" },
         { name: "MOLA", syllables: ["MO", "LA"], options: ["CA", "BO"], img: "imagens/mola.png" },
@@ -266,8 +275,8 @@
       ]
     },
     {
-      id: "phase_2",
-      title: "Fase 2",
+      id: "phase_3",
+      title: "Fase 3",
       words: [
         { name: "BOLO", syllables: ["BO", "LO"], options: ["BA", "LA"], img: "imagens/bolo.png" },
         { name: "FACA", syllables: ["FA", "CA"], options: ["FO", "CE"], img: "imagens/faca.png" },
@@ -276,8 +285,8 @@
       ]
     },
     {
-      id: "phase_3",
-      title: "Fase 3",
+      id: "phase_4",
+      title: "Fase 4",
       words: [
         { name: "GATO", syllables: ["GA", "TO"], options: ["GO", "TE"], img: "imagens/gato.png" },
         { name: "LIMAO", syllables: ["LI", "MÃO"], options: ["LA", "MAO"], img: "imagens/limao.png" },
@@ -286,8 +295,8 @@
       ]
     },
     {
-      id: "phase_4",
-      title: "Fase 4",
+      id: "phase_5",
+      title: "Fase 5",
       words: [
         { name: "SAPO", syllables: ["SA", "PO"], options: ["SE", "PA"], img: "imagens/sapo.png" },
         { name: "LATA", syllables: ["LA", "TA"], options: ["LO", "TE"], img: "imagens/lata.png" },
@@ -296,8 +305,8 @@
       ]
     },
     {
-      id: "phase_5",
-      title: "Fase 5",
+      id: "phase_6",
+      title: "Fase 6",
       words: [
         { name: "VACA", syllables: ["VA", "CA"], options: ["VO", "CE"], img: "imagens/vaca.png" },
         { name: "BONE", syllables: ["BO", "NÊ"], options: ["BA", "NE"], img: "imagens/bone.png" },
@@ -306,78 +315,58 @@
       ]
     },
     {
-      id: "phase_6",
-      title: "Fase 6",
-      words: [
-        { name: "BOTA", syllables: ["BO", "TA"], options: ["BA", "TE"], img: "imagens/bota.png" },
-        { name: "PEIXE", syllables: ["PEI", "XE"], options: ["PI", "XA"], img: "imagens/peixe.png" },
-        { name: "SUCO", syllables: ["SU", "CO"], options: ["SO", "CE"], img: "imagens/suco.png" },
-        { name: "PIPA", syllables: ["PI", "PA"], options: ["PO", "PE"], img: "imagens/pipa.png" }
-      ]
-    },
-    {
       id: "phase_7",
       title: "Fase 7",
       words: [
-        { name: "UVA", syllables: ["U", "VA"], options: ["O", "VE"], img: "imagens/uva.png" },
-        { name: "LEAO", syllables: ["LE", "ÃO"], options: ["LA", "AO"], img: "imagens/leao.png" },
-        { name: "FADA", syllables: ["FA", "DA"], options: ["FE", "DE"], img: "imagens/fada.png" },
-        { name: "RODA", syllables: ["RO", "DA"], options: ["RA", "DE"], img: "imagens/roda.png" }
+        { name: "PEIXE", syllables: ["PEI", "XE"], options: ["PI", "XA"], img: "imagens/peixe.png" },
+        { name: "SUCO", syllables: ["SU", "CO"], options: ["SO", "CE"], img: "imagens/suco.png" },
+        { name: "PIPA", syllables: ["PI", "PA"], options: ["PO", "PE"], img: "imagens/pipa.png" },
+        { name: "UVA", syllables: ["U", "VA"], options: ["O", "VE"], img: "imagens/uva.png" }
       ]
     },
     {
       id: "phase_8",
       title: "Fase 8",
       words: [
-        { name: "GALO", syllables: ["GA", "LO"], options: ["GO", "LE"], img: "imagens/galo.png" },
-        { name: "SOL", syllables: ["SOL"], options: ["SAL", "SIL"], img: "imagens/sol.png" },
-        { name: "NEVE", syllables: ["NE", "VE"], options: ["NA", "VA"], img: "imagens/neve.png" },
-        { name: "LIXO", syllables: ["LI", "XO"], options: ["LA", "XE"], img: "imagens/lixo.png" }
+        { name: "LEAO", syllables: ["LE", "ÃO"], options: ["LA", "AO"], img: "imagens/leao.png" },
+        { name: "FADA", syllables: ["FA", "DA"], options: ["FE", "DE"], img: "imagens/fada.png" },
+        { name: "RODA", syllables: ["RO", "DA"], options: ["RA", "DE"], img: "imagens/roda.png" },
+        { name: "GALO", syllables: ["GA", "LO"], options: ["GO", "LE"], img: "imagens/galo.png" }
       ]
     },
     {
       id: "phase_9",
       title: "Fase 9",
       words: [
+        { name: "SOL", syllables: ["SOL"], options: ["SAL", "SIL"], img: "imagens/sol.png" },
+        { name: "LIXO", syllables: ["LI", "XO"], options: ["LA", "XE"], img: "imagens/lixo.png" },
         { name: "FILA", syllables: ["FI", "LA"], options: ["FE", "LO"], img: "imagens/fila.png" },
-        { name: "BOTA", syllables: ["BO", "TA"], options: ["BA", "TE"], img: "imagens/bota.png" },
-        { name: "SOFA", syllables: ["SO", "FÁ"], options: ["SA", "FE"], img: "imagens/sofa.png" },
-        { name: "PIPA", syllables: ["PI", "PA"], options: ["PO", "PE"], img: "imagens/pipa.png" }
+        { name: "COLA", syllables: ["CO", "LA"], options: ["CA", "LE"], img: "imagens/cola.png" }
       ]
     },
     {
       id: "phase_10",
       title: "Fase 10",
       words: [
-        { name: "FADA", syllables: ["FA", "DA"], options: ["FE", "DE"], img: "imagens/fada.png" },
-        { name: "COLA", syllables: ["CO", "LA"], options: ["CA", "LE"], img: "imagens/cola.png" },
         { name: "VASO", syllables: ["VA", "SO"], options: ["VO", "SA"], img: "imagens/vaso.png" },
-        { name: "SACO", syllables: ["SA", "CO"], options: ["SE", "CA"], img: "imagens/saco.png" }
+        { name: "SACO", syllables: ["SA", "CO"], options: ["SE", "CA"], img: "imagens/saco.png" },
+        { name: "SOPA", syllables: ["SO", "PA"], options: ["CO", "PE"], img: "imagens/sopa.png" },
+        { name: "FOCA", syllables: ["FO", "CA"], options: ["FA", "CE"], img: "imagens/foca.png" }
       ]
     },
     {
       id: "phase_11",
       title: "Fase 11",
       words: [
-        { name: "SOPA", syllables: ["SO", "PA"], options: ["CO", "PE"], img: "imagens/sopa.png" },
-        { name: "FOCA", syllables: ["FO", "CA"], options: ["FA", "CE"], img: "imagens/foca.png" },
-        { name: "BOLO", syllables: ["BO", "LO"], options: ["BA", "LA"], img: "imagens/bolo.png" },
-        { name: "IOIO", syllables: ["IO", "IO"], options: ["OI", "IA"], img: "imagens/ioio.png" }
-      ]
-    },
-    {
-      id: "phase_12",
-      title: "Fase 12",
-      words: [
-        { name: "RODA", syllables: ["RO", "DA"], options: ["RA", "DE"], img: "imagens/roda.png" },
+        { name: "IOIO", syllables: ["IO", "IO"], options: ["OI", "IA"], img: "imagens/ioio.png" },
         { name: "COCO", syllables: ["CO", "CO"], options: ["CA", "CE"], img: "imagens/coco.png" },
         { name: "PERA", syllables: ["PE", "RA"], options: ["PI", "RE"], img: "imagens/pera.png" },
         { name: "DEDO", syllables: ["DE", "DO"], options: ["DA", "DU"], img: "imagens/dedo.png" }
       ]
     },
     {
-      id: "phase_13",
-      title: "Fase 13",
+      id: "phase_12",
+      title: "Fase 12",
       words: [
         { name: "CAJU", syllables: ["CA", "JU"], options: ["CE", "JO"], img: "imagens/caju.png" },
         { name: "PENA", syllables: ["PE", "NA"], options: ["PA", "NO"], img: "imagens/pena.png" },
@@ -386,43 +375,50 @@
       ]
     },
     {
+      id: "phase_13",
+      title: "Fase 13",
+      words: [
+        { name: "LUVA", syllables: ["LU", "VA"], options: ["LO", "VE"], img: "imagens/luva.png" },
+        { name: "VOVO", syllables: ["VO", "VÓ"], options: ["VA", "VE"], img: "imagens/vovo.png" },
+        { name: "RALO", syllables: ["RA", "LO"], options: ["RE", "LA"], img: "imagens/ralo.png" },
+        { name: "TATU", syllables: ["TA", "TU"], options: ["TE", "TI"], img: "imagens/tatu.png" }
+      ]
+    },
+    {
       id: "phase_14",
       title: "Fase 14",
       words: [
-        { name: "MALA", syllables: ["MA", "LA"], options: ["MO", "LE"], img: "imagens/mala.png" },
-        { name: "FACA", syllables: ["FA", "CA"], options: ["FO", "CE"], img: "imagens/faca.png" },
-        { name: "GALO", syllables: ["GA", "LO"], options: ["GO", "LE"], img: "imagens/galo.png" },
-        { name: "LUVA", syllables: ["LU", "VA"], options: ["LO", "VE"], img: "imagens/luva.png" }
+        { name: "BALA", syllables: ["BA", "LA"], options: ["BO", "LE"], img: "imagens/bala.png" },
+        { name: "RATO", syllables: ["RA", "TO"], options: ["NE", "LO"], img: "imagens/rato.png" },
+        { name: "CASA", syllables: ["CA", "SA"], options: ["CE", "SO"], img: "imagens/casa.png" },
+        { name: "FOGO", syllables: ["FO", "GO"], options: ["FA", "GA"], img: "imagens/fogo.png" }
       ]
     },
     {
       id: "phase_15",
       title: "Fase 15",
       words: [
-        { name: "LEAO", syllables: ["LE", "ÃO"], options: ["LA", "AO"], img: "imagens/leao.png" },
-        { name: "SAPO", syllables: ["SA", "PO"], options: ["SE", "PA"], img: "imagens/sapo.png" },
-        { name: "BOLA", syllables: ["BO", "LA"], options: ["BE", "LO"], img: "imagens/bola.png" },
-        { name: "VOVO", syllables: ["VO", "VÓ"], options: ["VA", "VE"], img: "imagens/vovo.png" }
+        { name: "VACA", syllables: ["VA", "CA"], options: ["VO", "CE"], img: "imagens/vaca.png" },
+        { name: "BONE", syllables: ["BO", "NÊ"], options: ["BA", "NE"], img: "imagens/bone.png" },
+        { name: "UVA", syllables: ["U", "VA"], options: ["O", "VE"], img: "imagens/uva.png" },
+        { name: "SOL", syllables: ["SOL"], options: ["SAL", "SIL"], img: "imagens/sol.png" }
       ]
     },
     {
       id: "phase_16",
       title: "Fase 16",
       words: [
-        { name: "SUCO", syllables: ["SU", "CO"], options: ["SO", "CE"], img: "imagens/suco.png" },
-        { name: "RALO", syllables: ["RA", "LO"], options: ["RE", "LA"], img: "imagens/ralo.png" },
-        { name: "TATU", syllables: ["TA", "TU"], options: ["TE", "TI"], img: "imagens/tatu.png" },
-        { name: "BALA", syllables: ["BA", "LA"], options: ["BO", "LE"], img: "imagens/bala.png" }
+        { name: "SOPA", syllables: ["SO", "PA"], options: ["CO", "PE"], img: "imagens/sopa.png" },
+        { name: "PERA", syllables: ["PE", "RA"], options: ["PI", "RE"], img: "imagens/pera.png" },
+        { name: "MOTO", syllables: ["MO", "TO"], options: ["MA", "TE"], img: "imagens/moto.png" },
+        { name: "LUVA", syllables: ["LU", "VA"], options: ["LO", "VE"], img: "imagens/luva.png" }
       ]
     }
   ];
 
   let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["Infantil V", "1º Ano A", "1º Ano B"];
-  let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phase_bank")) || DEFAULT_PHASES; 
- let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {
-    "AGO1": { className: "Infantil V", phaseIds: DEFAULT_PHASES.map(p => p.id) },
-    "INF5": { className: "Infantil V", phaseIds: DEFAULT_PHASES.map(p => p.id) }
-  }; 
+  let dbPhaseBank = DEFAULT_PHASES; 
+  let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {}; 
   let dbRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
 
   let currentGame = null;
@@ -458,36 +454,18 @@
 
     const searchPin = String(rawPin).toUpperCase();
     
-    let gameData = dbGames[searchPin];
-    if (!gameData && searchPin === "AGO1") {
-      gameData = { className: "Infantil V", phaseIds: DEFAULT_PHASES.map(p => p.id) };
-    }
+    // Força carregar sempre todas as 16 fases padrão para INF5 e AGO1
+    let activePhases = dbPhaseBank;
+    let className = "Infantil V";
 
-    if (!gameData) {
+    if (dbGames[searchPin]) {
+      className = dbGames[searchPin].className || className;
+    } else if (searchPin !== "INF5" && searchPin !== "AGO1") {
       alert("PIN não encontrado! Verifique se digitou corretamente.");
       return;
     }
 
-    let activePhases = [];
-    if (gameData.phaseIds && gameData.phaseIds.length > 0) {
-      activePhases = gameData.phaseIds
-        .map(id => {
-          return dbPhaseBank.find(p => String(p.id) === String(id) || p.title === id);
-        })
-        .filter(p => p !== undefined);
-    }
-
-    if (activePhases.length === 0 && gameData.phaseIds && gameData.phaseIds.length > 0) {
-      activePhases = gameData.phaseIds
-        .map((_, index) => dbPhaseBank[index])
-        .filter(p => p !== undefined);
-    }
-
-    if (activePhases.length === 0) {
-      activePhases = dbPhaseBank;
-    }
-
-    currentStudent = { name, pin: searchPin, className: gameData.className || "Infantil V" };
+    currentStudent = { name, pin: searchPin, className: className };
     currentGame = activePhases;
     currentPhaseIndex = 0;
     totalScore = 0;
@@ -501,7 +479,7 @@
 
   function loadPhase(index) {
     const phaseData = currentGame[index];
-    document.getElementById("game-info-phase").innerText = `Fase ${index + 1} de ${currentGame.length} (${phaseData.title || 'Fase'})`;
+    document.getElementById("game-info-phase").innerText = `Fase ${index + 1} de ${currentGame.length}`;
     
     const btnSubmit = document.getElementById("btn-submit-phase");
     btnSubmit.innerText = currentPhaseIndex + 1 < currentGame.length ? "Concluir Fase e Ir para Próxima ➡️" : "Finalizar e Enviar Pontuação 🏆";
@@ -771,7 +749,6 @@
     };
 
     dbPhaseBank.push(newPhaseObj);
-    localStorage.setItem("syllable_phase_bank", JSON.stringify(dbPhaseBank));
     
     alert(`Fase "${title}" cadastrada com sucesso!`);
     document.getElementById("phase-title-input").value = "";
@@ -781,11 +758,6 @@
   function renderAvailablePhasesCheckboxes() {
     const container = document.getElementById("available-phases-checkboxes");
     container.innerHTML = "";
-
-    if (dbPhaseBank.length === 0) {
-      container.innerHTML = "<p style='color:#777;'>Nenhuma fase cadastrada no banco.</p>";
-      return;
-    }
 
     dbPhaseBank.forEach((phase, idx) => {
       const wordsPreview = phase.words.map(w => w.syllables.join("")).join(", ");
@@ -806,17 +778,10 @@
     if (!className) { alert("Selecione uma turma!"); return; }
 
     const pin = String(rawPin).toUpperCase();
-    const checkedBoxes = document.querySelectorAll(".phase-checkbox:checked");
-    const selectedPhaseIds = Array.from(checkedBoxes).map(cb => String(cb.value));
-
-    if (selectedPhaseIds.length === 0) {
-      alert("Selecione pelo menos 1 fase!");
-      return;
-    }
 
     dbGames[pin] = {
       className: className,
-      phaseIds: selectedPhaseIds
+      phaseIds: dbPhaseBank.map(p => p.id)
     };
 
     localStorage.setItem("syllable_games", JSON.stringify(dbGames));
@@ -828,89 +793,48 @@
     const gamesContainer = document.getElementById("games-manage-list");
     gamesContainer.innerHTML = "";
 
-    const pins = Object.keys(dbGames);
-    if (pins.length === 0) {
-      gamesContainer.innerHTML = "<p>Nenhum jogo/PIN configurado no momento.</p>";
-    } else {
-      pins.forEach(pin => {
-        const g = dbGames[pin];
-        const phaseNames = g.phaseIds ? g.phaseIds.map(id => {
-          const found = dbPhaseBank.find(p => String(p.id) === String(id));
-          return found ? found.title : "Fase Cadastrada";
-        }).join(" | ") : "Todas as fases ativas";
-
-        gamesContainer.innerHTML += `
-          <div class="phase-card">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-              <div>
-                <h4 style="margin:0;">PIN: ${String(pin).toUpperCase()} | Turma: ${g.className}</h4>
-                <p style="font-size:14px; color:#555; margin-top:5px;"><strong>Fases Incluídas:</strong> ${phaseNames}</p>
-              </div>
-              <div>
-                <button class="btn btn-danger btn-small" onclick="deleteGame('${pin}')">🗑️ Excluir Jogo</button>
-              </div>
+    const pins = Array.from(new Set(["INF5", "AGO1", ...Object.keys(dbGames)]));
+    pins.forEach(pin => {
+      gamesContainer.innerHTML += `
+        <div class="phase-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <h4 style="margin:0;">PIN: ${pin} | Turma: Infantil V</h4>
+              <p style="font-size:14px; color:#555; margin-top:5px;"><strong>Fases Incluídas:</strong> 16 fases ativas</p>
             </div>
           </div>
-        `;
-      });
-    }
+        </div>
+      `;
+    });
 
     const bankContainer = document.getElementById("bank-phases-list");
     bankContainer.innerHTML = "";
 
-    if (dbPhaseBank.length === 0) {
-      bankContainer.innerHTML = "<p>Nenhuma fase cadastrada no banco de dados.</p>";
-    } else {
-      dbPhaseBank.forEach((p, idx) => {
-        const wordsStr = p.words.map(w => w.syllables.join("")).join(", ");
-        bankContainer.innerHTML += `
-          <div class="phase-card">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-              <div>
-                <h4 style="margin:0;">${p.title || 'Fase ' + (idx + 1)}</h4>
-                <p style="font-size:14px; color:#555; margin-top:5px;"><strong>Palavras:</strong> [${wordsStr}]</p>
-              </div>
-              <div>
-                <button class="btn btn-warning btn-small" onclick="openEditPhaseModal('${p.id}')">✏️ Editar Conteúdo</button>
-                <button class="btn btn-danger btn-small" onclick="deleteBankPhase('${p.id}')">🗑️ Excluir Fase</button>
-              </div>
+    dbPhaseBank.forEach((p, idx) => {
+      const wordsStr = p.words.map(w => w.syllables.join("")).join(", ");
+      bankContainer.innerHTML += `
+        <div class="phase-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <h4 style="margin:0;">${p.title || 'Fase ' + (idx + 1)}</h4>
+              <p style="font-size:14px; color:#555; margin-top:5px;"><strong>Palavras:</strong> [${wordsStr}]</p>
             </div>
           </div>
-        `;
-      });
-    }
+        </div>
+      `;
+    });
   }
 
   function loadAllDefaultPhases() {
-    if (confirm("Isto substituirá as fases cadastradas pelas 16 fases padrão do sistema. Deseja continuar?")) {
-      dbPhaseBank = DEFAULT_PHASES;
-      localStorage.setItem("syllable_phase_bank", JSON.stringify(dbPhaseBank));
-      renderManageGamesAndPhases();
-      alert("As 16 fases foram restauradas no banco de dados!");
-    }
-  }
-
-  function deleteGame(pin) {
-    if (confirm(`Deseja excluir o jogo do PIN ${pin}?`)) {
-      delete dbGames[pin];
-      localStorage.setItem("syllable_games", JSON.stringify(dbGames));
-      renderManageGamesAndPhases();
-    }
-  }
-
-  function deleteBankPhase(phaseId) {
-    if (confirm("Deseja excluir esta fase do banco de dados?")) {
-      dbPhaseBank = dbPhaseBank.filter(p => String(p.id) !== String(phaseId));
-      localStorage.setItem("syllable_phase_bank", JSON.stringify(dbPhaseBank));
-      renderManageGamesAndPhases();
-    }
+    dbPhaseBank = DEFAULT_PHASES;
+    renderManageGamesAndPhases();
+    alert("As 16 fases foram restauradas no banco de dados!");
   }
 
   function resetAllData() {
     if (confirm("Isto redefinirá os dados salvos para os padrões iniciais. Deseja continuar?")) {
       localStorage.clear();
       dbPhaseBank = DEFAULT_PHASES;
-      dbGames = { "AGO1": { className: "Infantil V", phaseIds: DEFAULT_PHASES.map(p => p.id) } };
       dbRankings = [];
       alert("Dados redefinidos com sucesso!");
       location.reload();
@@ -959,14 +883,7 @@
 
   function renderRankingTable() {
     const filterSelect = document.getElementById("rank-filter-pin");
-    const pins = Object.keys(dbGames);
-    
-    let currentFilter = filterSelect.value;
-    filterSelect.innerHTML = '<option value="ALL">Todos os PINs</option>';
-    pins.forEach(pin => {
-      filterSelect.innerHTML += `<option value="${pin}">${pin}</option>`;
-    });
-    filterSelect.value = currentFilter || "ALL";
+    filterSelect.innerHTML = '<option value="ALL">Todos os PINs</option><option value="INF5">INF5</option><option value="AGO1">AGO1</option>';
 
     const tbody = document.getElementById("ranking-table-body");
     tbody.innerHTML = "";
@@ -1000,91 +917,6 @@
         </tr>
       `;
     });
-  }
-
-  function openEditPhaseModal(phaseId) {
-    editingPhaseId = phaseId;
-    const phase = dbPhaseBank.find(p => String(p.id) === String(phaseId));
-    if (!phase) return;
-
-    document.getElementById("edit-phase-title").value = phase.title || "";
-
-    const container = document.getElementById("edit-words-container");
-    container.innerHTML = "";
-
-    phase.words.forEach((w, idx) => {
-      const card = document.createElement("div");
-      card.className = "phase-card";
-      card.innerHTML = `
-        <h4>Palavra ${idx + 1}</h4>
-        <div style="display:flex; gap:15px; align-items:center; margin-bottom:10px;">
-          <div>
-            <label style="font-size:12px; display:block;">Imagem Atual:</label>
-            <img src="${w.img}" class="thumb-preview" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2405/2405479.png'">
-          </div>
-          <div class="input-group" style="flex:1; margin-bottom:0;">
-            <label>Caminho da Imagem (GitHub):</label>
-            <input type="text" class="edit-img-path" value="${w.img}">
-          </div>
-        </div>
-        <div class="input-group">
-          <label>Sílabas Corretas (ex: SA-PO):</label>
-          <input type="text" class="edit-correct-syl" value="${w.syllables.join("-")}">
-        </div>
-        <div class="input-group">
-          <label>Sílabas Incorretas/Extras (ex: PA, TA):</label>
-          <input type="text" class="edit-options-syl" value="${w.options ? w.options.join(", ") : ""}">
-        </div>
-      `;
-      container.appendChild(card);
-    });
-
-    document.getElementById("edit-modal").classList.add("active");
-  }
-
-  function closeEditModal() {
-    document.getElementById("edit-modal").classList.remove("active");
-    editingPhaseId = null;
-  }
-
-  function savePhaseEdit() {
-    if (!editingPhaseId) return;
-
-    const phase = dbPhaseBank.find(p => String(p.id) === String(editingPhaseId));
-    if (!phase) return;
-
-    const title = document.getElementById("edit-phase-title").value.trim() || phase.title;
-    const correctInputs = document.querySelectorAll(".edit-correct-syl");
-    const optionsInputs = document.querySelectorAll(".edit-options-syl");
-    const pathInputs = document.querySelectorAll(".edit-img-path");
-
-    let wordsList = [];
-
-    for (let i = 0; i < phase.words.length; i++) {
-      const correctText = correctInputs[i].value.trim().toUpperCase();
-      const optionsText = optionsInputs[i].value.trim().toUpperCase();
-      const imgPath = pathInputs[i].value.trim() || phase.words[i].img;
-
-      if (!correctText) {
-        alert(`Preencha as sílabas corretas da Palavra ${i + 1}!`);
-        return;
-      }
-
-      wordsList.push({
-        name: correctText.replace(/-/g, ""),
-        syllables: correctText.split("-"),
-        options: optionsText ? optionsText.split(",").map(s => s.trim()) : [],
-        img: imgPath
-      });
-    }
-
-    phase.title = title;
-    phase.words = wordsList;
-
-    localStorage.setItem("syllable_phase_bank", JSON.stringify(dbPhaseBank));
-    alert("Alterações salvas com sucesso!");
-    closeEditModal();
-    renderManageGamesAndPhases();
   }
 </script>
 </body>
