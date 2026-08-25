@@ -419,8 +419,9 @@
 
   let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["Infantil V", "1º Ano A", "1º Ano B"];
   let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phase_bank")) || DEFAULT_PHASES; 
-  let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {
-    "AGO1": { className: "Infantil V", phaseIds: DEFAULT_PHASES.map(p => p.id) }
+ let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {
+    "AGO1": { className: "Infantil V", phaseIds: DEFAULT_PHASES.map(p => p.id) },
+    "INF5": { className: "Infantil V", phaseIds: DEFAULT_PHASES.map(p => p.id) }
   }; 
   let dbRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
 
