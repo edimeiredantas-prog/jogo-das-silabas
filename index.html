@@ -470,12 +470,20 @@
     let activePhases = [];
     if (gameData.phaseIds && gameData.phaseIds.length > 0) {
       activePhases = gameData.phaseIds
-        .map(id => dbPhaseBank.find(p => String(p.id) === String(id)))
+        .map(id => {
+          return dbPhaseBank.find(p => String(p.id) === String(id) || p.title === id);
+        })
+        .filter(p => p !== undefined);
+    }
+
+    if (activePhases.length === 0 && gameData.phaseIds && gameData.phaseIds.length > 0) {
+      activePhases = gameData.phaseIds
+        .map((_, index) => dbPhaseBank[index])
         .filter(p => p !== undefined);
     }
 
     if (activePhases.length === 0) {
-      activePhases = DEFAULT_PHASES;
+      activePhases = dbPhaseBank;
     }
 
     currentStudent = { name, pin: searchPin, className: gameData.className || "Infantil V" };
