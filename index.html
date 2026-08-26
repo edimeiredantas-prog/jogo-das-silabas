@@ -290,7 +290,7 @@
         { name: "LIXO", syllables: ["LI", "XO"], options: ["LA", "CO"], img: "imagens/lixo.png" },
         { name: "FOGO", syllables: ["FO", "GO"], options: ["FE", "DO"], img: "imagens/fogo.png" },
         { name: "GOTA", syllables: ["GO", "TA"], options: ["GA", "TE"], img: "imagens/gota.png" },
-        { name: "REMO", syllables: ["RE", "MO"], options: ["RA", "DA"], img: "imagens/remo.png" }
+        { name: "REMO", syllables: ["RE", "MO"], options: ["RA", "DM"], img: "imagens/remo.png" }
       ]
     },
     {
@@ -394,7 +394,6 @@
   let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["Infantil V", "1º Ano A", "1º Ano B"];
   let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phases")) || DEFAULT_PHASES; 
   let dbGames = Object.assign({}, DEFAULT_GAMES, JSON.parse(localStorage.getItem("syllable_games")) || {}); 
-  let dbRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
 
   let currentGame = null;
   let currentPhaseIndex = 0;
@@ -604,14 +603,17 @@
   }
 
   function finishGame() {
-    dbRankings.push({
+    let currentRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
+    
+    currentRankings.push({
       student: currentStudent.name,
       className: currentStudent.className,
       pin: currentStudent.pin,
       score: totalScore,
       date: new Date().toLocaleString("pt-BR")
     });
-    localStorage.setItem("syllable_rankings", JSON.stringify(dbRankings));
+    
+    localStorage.setItem("syllable_rankings", JSON.stringify(currentRankings));
 
     document.getElementById("final-score").innerText = totalScore;
     showScreen("screen-finish");
@@ -792,7 +794,6 @@
       dbClasses = ["Infantil V", "1º Ano A", "1º Ano B"];
       dbPhaseBank = DEFAULT_PHASES;
       dbGames = DEFAULT_GAMES;
-      dbRankings = [];
       alert("Sistema resetado para as configurações iniciais!");
       showAdminTab('manage');
     }
@@ -828,13 +829,13 @@
   }
 
   function renderRankingTable() {
+    const currentRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
     const filterSelect = document.getElementById("rank-filter-pin");
     const currentSelected = filterSelect.value || "ALL";
     
     filterSelect.innerHTML = '<option value="ALL">Todos os PINs</option>';
     
-    // Lista de PINs incluindo os ativos no dbGames e os já salvos no Ranking
-    const allActivePins = [...new Set([...Object.keys(dbGames), ...dbRankings.map(r => r.pin)])];
+    const allActivePins = [...new Set([...Object.keys(dbGames), ...currentRankings.map(r => r.pin)])];
     allActivePins.forEach(p => {
       filterSelect.innerHTML += `<option value="${p}">${p}</option>`;
     });
@@ -844,7 +845,7 @@
     const tbody = document.getElementById("ranking-table-body");
     tbody.innerHTML = "";
 
-    let filtered = dbRankings;
+    let filtered = currentRankings;
     if (filterSelect.value !== "ALL") {
       filtered = filtered.filter(r => r.pin === filterSelect.value);
     }
