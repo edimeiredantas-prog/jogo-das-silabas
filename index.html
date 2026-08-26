@@ -65,10 +65,6 @@
     .checkbox-list { display: flex; flex-direction: column; gap: 8px; background: #fff; padding: 10px; border: 1px solid #ccc; border-radius: 6px; max-height: 200px; overflow-y: auto; }
     .checkbox-item { display: flex; align-items: center; gap: 10px; font-size: 15px; cursor: pointer; }
     .checkbox-item input { width: 18px; height: 18px; cursor: pointer; }
-
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
-    .modal-overlay.active { display: flex; }
-    .modal-content { background: white; border-radius: 10px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
   </style>
 </head>
 <body>
@@ -80,7 +76,7 @@
     <h1>🎮 Jogo das Sílabas</h1>
     <div class="input-group">
       <label>PIN do Jogo:</label>
-      <input type="text" id="player-pin" placeholder="Ex: INF5 ou AGO1" style="text-transform: uppercase;">
+      <input type="text" id="player-pin" placeholder="Ex: 1AGO, INF5 ou AGO1" style="text-transform: uppercase;">
     </div>
     <div class="input-group">
       <label>Seu Nome (máximo 15 caracteres):</label>
@@ -118,12 +114,10 @@
     <div id="admin-tab-create-phase">
       <h3>1. Cadastrar Fase no Banco de Dados</h3>
       <div class="input-group">
-        <label>Nome/Título da Fase (Ex: Fase 1 - Objetos):</label>
-        <input type="text" id="phase-title-input" placeholder="Digite um nome de identificação para esta fase">
+        <label>Nome/Título da Fase (Ex: Fase 19 - Animais):</label>
+        <input type="text" id="phase-title-input" placeholder="Digite um nome de identificação">
       </div>
-      
       <div id="words-form-container"></div>
-
       <button class="btn btn-success" onclick="saveNewPhaseToBank()">Salvar Fase no Banco</button>
     </div>
 
@@ -131,19 +125,17 @@
     <div id="admin-tab-assign-game" style="display:none;">
       <h3>2. Criar Jogo (PIN) para uma Turma</h3>
       <div class="input-group">
-        <label>Defina o PIN do Jogo (ex: 1234, AGO1):</label>
-        <input type="text" id="new-pin" placeholder="Ex: INF5" style="text-transform: uppercase;">
+        <label>Defina o PIN do Jogo (ex: 1AGO, INF5):</label>
+        <input type="text" id="new-pin" placeholder="Ex: 1AGO" style="text-transform: uppercase;">
       </div>
       <div class="input-group">
         <label>Selecione a Turma:</label>
         <select id="new-game-class"></select>
       </div>
-
       <div class="input-group">
         <label>Marque as Fases que farão parte deste Jogo/PIN:</label>
         <div id="available-phases-checkboxes" class="checkbox-list"></div>
       </div>
-
       <button class="btn btn-success" onclick="createGameWithSelectedPhases()">Gerar Jogo para a Turma</button>
     </div>
 
@@ -151,9 +143,7 @@
     <div id="admin-tab-manage" style="display:none;">
       <h3>Jogos Ativos (PINs por Turma)</h3>
       <div id="games-manage-list"></div>
-
       <hr style="margin: 25px 0;">
-
       <h3>Banco de Fases Cadastradas</h3>
       <div id="bank-phases-list"></div>
       <button class="btn btn-warning btn-small" style="margin-top:15px; margin-right:10px;" onclick="loadAllDefaultPhases()">🔄 Carregar/Restaurar Fases Padrão</button>
@@ -168,7 +158,6 @@
         <input type="text" id="class-name-input" placeholder="Ex: 1º Ano A, Infantil V">
       </div>
       <button class="btn btn-success" onclick="addNewClass()">Adicionar Turma</button>
-
       <h4 style="margin-top:20px; margin-bottom:10px;">Turmas Cadastradas:</h4>
       <div id="classes-list"></div>
     </div>
@@ -210,7 +199,6 @@
 
     <div class="game-layout">
       <div class="words-column" id="game-words-column"></div>
-
       <div class="sidebar-options">
         <h3>Opções de Sílabas</h3>
         <div class="options-grid" id="game-sidebar-options"></div>
@@ -234,8 +222,7 @@
 <script>
   const DEFAULT_PHASES = [
     {
-      id: "phase_1",
-      title: "Fase 1",
+      id: "phase_1", title: "Fase 1",
       words: [
         { name: "NEVE", syllables: ["NE", "VE"], options: ["SO", "TE"], img: "imagens/neve.png" },
         { name: "CAMA", syllables: ["CA", "MA"], options: ["BO", "LO"], img: "imagens/cama.png" },
@@ -244,8 +231,7 @@
       ]
     },
     {
-      id: "phase_2",
-      title: "Fase 2",
+      id: "phase_2", title: "Fase 2",
       words: [
         { name: "REDE", syllables: ["RE", "DE"], options: ["RA", "DO"], img: "imagens/rede.png" },
         { name: "DADO", syllables: ["DA", "DO"], options: ["DE", "DI"], img: "imagens/dado.png" },
@@ -254,8 +240,7 @@
       ]
     },
     {
-      id: "phase_3",
-      title: "Fase 3",
+      id: "phase_3", title: "Fase 3",
       words: [
         { name: "BOLO", syllables: ["BO", "LO"], options: ["BA", "LA"], img: "imagens/bolo.png" },
         { name: "FACA", syllables: ["FA", "CA"], options: ["FO", "CE"], img: "imagens/faca.png" },
@@ -264,8 +249,7 @@
       ]
     },
     {
-      id: "phase_4",
-      title: "Fase 4",
+      id: "phase_4", title: "Fase 4",
       words: [
         { name: "RAIVA", syllables: ["RAI", "VA"], options: ["REI", "VE"], img: "imagens/raiva.png" },
         { name: "JUDÔ", syllables: ["JU", "DÔ"], options: ["JO", "DA"], img: "imagens/judo.png" },
@@ -274,8 +258,7 @@
       ]
     },
     {
-      id: "phase_5",
-      title: "Fase 5",
+      id: "phase_5", title: "Fase 5",
       words: [
         { name: "PEÃO", syllables: ["PE", "ÃO"], options: ["PA", "OA"], img: "imagens/peao.png" },
         { name: "NOVE", syllables: ["NO", "VE"], options: ["LO", "TE"], img: "imagens/nove.png" },
@@ -284,8 +267,7 @@
       ]
     },
     {
-      id: "phase_6",
-      title: "Fase 6",
+      id: "phase_6", title: "Fase 6",
       words: [
         { name: "JACA", syllables: ["JA", "CA"], options: ["JO", "CE"], img: "imagens/jaca.png" },
         { name: "LUPA", syllables: ["LU", "PA"], options: ["LO", "PE"], img: "imagens/lupa.png" },
@@ -294,8 +276,7 @@
       ]
     },
     {
-      id: "phase_7",
-      title: "Fase 7",
+      id: "phase_7", title: "Fase 7",
       words: [
         { name: "PEIXE", syllables: ["PEI", "XE"], options: ["PI", "XA"], img: "imagens/peixe.png" },
         { name: "FOTO", syllables: ["FO", "TO"], options: ["GO", "TE"], img: "imagens/foto.png" },
@@ -304,8 +285,7 @@
       ]
     },
     {
-      id: "phase_8",
-      title: "Fase 8",
+      id: "phase_8", title: "Fase 8",
       words: [
         { name: "LIXO", syllables: ["LI", "XO"], options: ["LA", "CO"], img: "imagens/lixo.png" },
         { name: "FOGO", syllables: ["FO", "GO"], options: ["FE", "DO"], img: "imagens/fogo.png" },
@@ -314,8 +294,7 @@
       ]
     },
     {
-      id: "phase_9",
-      title: "Fase 9",
+      id: "phase_9", title: "Fase 9",
       words: [
         { name: "FILA", syllables: ["FI", "LA"], options: ["FO", "LE"], img: "imagens/fila.png" },
         { name: "VOVÔ", syllables: ["VO", "VÔ"], options: ["VA", "VÁ"], img: "imagens/vov.png" },
@@ -324,8 +303,7 @@
       ]
     },
     {
-      id: "phase_10",
-      title: "Fase 10",
+      id: "phase_10", title: "Fase 10",
       words: [
         { name: "VASO", syllables: ["VA", "SO"], options: ["VO", "SA"], img: "imagens/vaso.png" },
         { name: "SACO", syllables: ["SA", "CO"], options: ["SE", "CA"], img: "imagens/saco.png" },
@@ -334,8 +312,7 @@
       ]
     },
     {
-      id: "phase_11",
-      title: "Fase 11",
+      id: "phase_11", title: "Fase 11",
       words: [
         { name: "IOIO", syllables: ["IO", "IO"], options: ["OI", "IA"], img: "imagens/ioio.png" },
         { name: "CASA", syllables: ["CA", "SA"], options: ["CE", "SE"], img: "imagens/casa.png" },
@@ -344,8 +321,7 @@
       ]
     },
     {
-      id: "phase_12",
-      title: "Fase 12",
+      id: "phase_12", title: "Fase 12",
       words: [
         { name: "RODA", syllables: ["RO", "DA"], options: ["RE", "DO"], img: "imagens/roda.png" },
         { name: "COCO", syllables: ["CO", "CO"], options: ["CA", "CE"], img: "imagens/coco.png" },
@@ -354,8 +330,7 @@
       ]
     },
     {
-      id: "phase_13",
-      title: "Fase 13",
+      id: "phase_13", title: "Fase 13",
       words: [
         { name: "CAJU", syllables: ["CA", "JU"], options: ["CO", "JE"], img: "imagens/caju.png" },
         { name: "PENA", syllables: ["PE", "NA"], options: ["PA", "NE"], img: "imagens/pena.png" },
@@ -364,8 +339,7 @@
       ]
     },
     {
-      id: "phase_14",
-      title: "Fase 14",
+      id: "phase_14", title: "Fase 14",
       words: [
         { name: "MALA", syllables: ["MA", "LA"], options: ["MO", "LE"], img: "imagens/mala.png" },
         { name: "SOPA", syllables: ["SO", "PA"], options: ["SE", "PO"], img: "imagens/sopa.png" },
@@ -374,8 +348,7 @@
       ]
     },
     {
-      id: "phase_15",
-      title: "Fase 15",
+      id: "phase_15", title: "Fase 15",
       words: [
         { name: "LEÃO", syllables: ["LE", "ÃO"], options: ["LO", "ÕE"], img: "imagens/leao.png" },
         { name: "SAPO", syllables: ["SA", "PO"], options: ["SE", "PE"], img: "imagens/sapo.png" },
@@ -384,8 +357,7 @@
       ]
     },
     {
-      id: "phase_16",
-      title: "Fase 16",
+      id: "phase_16", title: "Fase 16",
       words: [
         { name: "SUCO", syllables: ["SU", "CO"], options: ["SO", "PE"], img: "imagens/suco.png" },
         { name: "RALO", syllables: ["RA", "LO"], options: ["RI", "LE"], img: "imagens/ralo.png" },
@@ -394,8 +366,7 @@
       ]
     },
     {
-      id: "phase_17",
-      title: "Fase 17",
+      id: "phase_17", title: "Fase 17",
       words: [
         { name: "BONÉ", syllables: ["BO", "NÉ"], options: ["BA", "NÁ"], img: "imagens/bone.png" },
         { name: "VACA", syllables: ["VA", "CA"], options: ["VI", "CE"], img: "imagens/vaca.png" },
@@ -404,8 +375,7 @@
       ]
     },
     {
-      id: "phase_18",
-      title: "Fase 18",
+      id: "phase_18", title: "Fase 18",
       words: [
         { name: "CAFÉ", syllables: ["CA", "FÉ"], options: ["CO", "FÁ"], img: "imagens/cafe.png" },
         { name: "MESA", syllables: ["ME", "SA"], options: ["MA", "SE"], img: "imagens/mesa.png" },
@@ -415,9 +385,16 @@
     }
   ];
 
+  // PINs pré-cadastrados no sistema do arquivo
+  const DEFAULT_GAMES = {
+    "1AGO": { className: "1º Ano A", phases: DEFAULT_PHASES },
+    "INF5": { className: "Infantil V", phases: DEFAULT_PHASES },
+    "AGO1": { className: "1º Ano B", phases: DEFAULT_PHASES }
+  };
+
   let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["Infantil V", "1º Ano A", "1º Ano B"];
   let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phases")) || DEFAULT_PHASES; 
-  let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {}; 
+  let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || DEFAULT_GAMES; 
   let dbRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
 
   let currentGame = null;
@@ -451,21 +428,15 @@
     }
 
     const searchPin = String(rawPin).toUpperCase();
-    let activePhases = dbPhaseBank;
-    let className = "Infantil V";
-
-    if (dbGames[searchPin]) {
-      className = dbGames[searchPin].className || className;
-      if (dbGames[searchPin].phases && dbGames[searchPin].phases.length > 0) {
-        activePhases = dbGames[searchPin].phases;
-      }
-    } else if (searchPin !== "INF5" && searchPin !== "AGO1") {
+    
+    if (!dbGames[searchPin]) {
       alert("PIN não encontrado! Verifique se digitou corretamente.");
       return;
     }
 
-    currentStudent = { name, pin: searchPin, className: className };
-    currentGame = activePhases;
+    const activeGame = dbGames[searchPin];
+    currentStudent = { name, pin: searchPin, className: activeGame.className };
+    currentGame = activeGame.phases && activeGame.phases.length > 0 ? activeGame.phases : DEFAULT_PHASES;
     currentPhaseIndex = 0;
     totalScore = 0;
 
@@ -821,7 +792,7 @@
       localStorage.clear();
       dbClasses = ["Infantil V", "1º Ano A", "1º Ano B"];
       dbPhaseBank = DEFAULT_PHASES;
-      dbGames = {};
+      dbGames = DEFAULT_GAMES;
       dbRankings = [];
       alert("Sistema resetado para as configurações iniciais!");
       showAdminTab('manage');
