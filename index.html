@@ -359,9 +359,9 @@
       title: "Fase 11",
       words: [
         { name: "IOIO", syllables: ["IO", "IO"], options: ["OI", "IA"], img: "imagens/ioio.png" },
-        { name: "SOPA", syllables: ["SO", "PA"], options: ["SA", "PE"], img: "imagens/sopa.png" },
-        { name: "FOCA", syllables: ["FO", "CA"], options: ["FI", "RE"], img: "imagens/foca.png" },
-        { name: "BOLO", syllables: ["BO", "LO"], options: ["BA", "LU"], img: "imagens/bolo.png" }
+        { name: "CASA", syllables: ["CA", "SA"], options: ["CE", "SE"], img: "imagens/casa.png" },
+        { name: "SETE", syllables: ["SE", "TE"], options: ["FE", "RE"], img: "imagens/sete.png" },
+        { name: "BEBÊ", syllables: ["BE", "BÊ"], options: ["BA", "BÁ"], img: "imagens/bebe.png" }
       ]
     },
     {
@@ -389,7 +389,7 @@
       title: "Fase 14",
       words: [
         { name: "MALA", syllables: ["MA", "LA"], options: ["MO", "LE"], img: "imagens/mala.png" },
-        { name: "FACA", syllables: ["FA", "CA"], options: ["FE", "CO"], img: "imagens/faca.png" },
+        { name: "SOPA", syllables: ["SO", "PA"], options: ["SE", "PO"], img: "imagens/sopa.png" },
         { name: "GALO", syllables: ["GA", "LO"], options: ["GE", "SO"], img: "imagens/galo.png" },
         { name: "LUVA", syllables: ["LU", "VA"], options: ["LA", "GA"], img: "imagens/luva.png" }
       ]
@@ -415,7 +415,27 @@
       ]
     }
   ];
-
+      id: "phase_17",
+      title: "Fase 17",
+      words: [
+        { name: "BONÉ", syllables: ["BO", "NÉ"], options: ["BA", "NÁ"], img: "imagens/bone.png" },
+        { name: "VACA", syllables: ["VA", "CA"], options: ["VI", "CE"], img: "imagens/vaca.png" },
+        { name: "COPO", syllables: ["CO", "PO"], options: ["CA", "TE"], img: "imagens/copo.png" },
+        { name: "MURO", syllables: ["MU", "RO"], options: ["MO", "RE"], img: "imagens/muro.png" }
+     ]
+    }
+  ];
+      id: "phase_18",
+      title: "Fase 18",
+      words: [
+        { name: "CAFÉ", syllables: ["CA", "FÉ"], options: ["CO", "FÁ"], img: "imagens/cafe.png" },
+        { name: "MESA", syllables: ["ME", "SA"], options: ["MA", "SE"], img: "imagens/mesa.png" },
+        { name: "RATO", syllables: ["RA", "TO"], options: ["RI", "TE"], img: "imagens/rato.png" },
+        { name: "SAIA", syllables: ["SA", "IA"], options: ["SO", "AI"], img: "imagens/saia.png" }
+     ]
+    }
+  ];
+  
   let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["Infantil V", "1º Ano A", "1º Ano B"];
   let dbPhaseBank = DEFAULT_PHASES; 
   let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {}; 
