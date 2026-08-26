@@ -385,7 +385,6 @@
     }
   ];
 
-  // PINs pré-cadastrados no sistema do arquivo
   const DEFAULT_GAMES = {
     "1AGO": { className: "1º Ano A", phases: DEFAULT_PHASES },
     "INF5": { className: "Infantil V", phases: DEFAULT_PHASES },
@@ -394,7 +393,7 @@
 
   let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["Infantil V", "1º Ano A", "1º Ano B"];
   let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phases")) || DEFAULT_PHASES; 
-  let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || DEFAULT_GAMES; 
+  let dbGames = Object.assign({}, DEFAULT_GAMES, JSON.parse(localStorage.getItem("syllable_games")) || {}); 
   let dbRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
 
   let currentGame = null;
@@ -830,23 +829,32 @@
 
   function renderRankingTable() {
     const filterSelect = document.getElementById("rank-filter-pin");
+    const currentSelected = filterSelect.value || "ALL";
+    
     filterSelect.innerHTML = '<option value="ALL">Todos os PINs</option>';
     
-    const pins = [...new Set(dbRankings.map(r => r.pin))];
-    pins.forEach(p => {
+    // Lista de PINs incluindo os ativos no dbGames e os já salvos no Ranking
+    const allActivePins = [...new Set([...Object.keys(dbGames), ...dbRankings.map(r => r.pin)])];
+    allActivePins.forEach(p => {
       filterSelect.innerHTML += `<option value="${p}">${p}</option>`;
     });
 
-    const selectedPin = filterSelect.value;
+    filterSelect.value = currentSelected;
+
     const tbody = document.getElementById("ranking-table-body");
     tbody.innerHTML = "";
 
     let filtered = dbRankings;
-    if (selectedPin !== "ALL") {
-      filtered = filtered.filter(r => r.pin === selectedPin);
+    if (filterSelect.value !== "ALL") {
+      filtered = filtered.filter(r => r.pin === filterSelect.value);
     }
 
     filtered.sort((a, b) => b.score - a.score);
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6">Nenhum resultado registrado para este PIN ainda.</td></tr>`;
+      return;
+    }
 
     filtered.forEach((r, idx) => {
       tbody.innerHTML += `
