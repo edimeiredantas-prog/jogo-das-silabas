@@ -66,15 +66,9 @@
     .checkbox-item { display: flex; align-items: center; gap: 10px; font-size: 15px; cursor: pointer; }
     .checkbox-item input { width: 18px; height: 18px; cursor: pointer; }
 
-    .pos-badge { font-weight: bold; font-size: 16px; }
-    .pos-1 { color: #d4ac0d; font-size: 18px; }
-    .pos-2 { color: #7f8c8d; font-size: 17px; }
-    .pos-3 { color: #a0522d; font-size: 16px; }
-
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
     .modal-overlay.active { display: flex; }
     .modal-content { background: white; border-radius: 10px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
-    .thumb-preview { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc; }
   </style>
 </head>
 <body>
@@ -162,8 +156,8 @@
 
       <h3>Banco de Fases Cadastradas</h3>
       <div id="bank-phases-list"></div>
-      <button class="btn btn-warning btn-small" style="margin-top:15px; margin-right:10px;" onclick="loadAllDefaultPhases()">🔄 Carregar/Restaurar 16 Fases Padrão</button>
-      <button class="btn btn-danger btn-small" style="margin-top:15px;" onclick="resetAllData()">⚠️ Limpar Tudo e Resetar Dados do Sistema</button>
+      <button class="btn btn-warning btn-small" style="margin-top:15px; margin-right:10px;" onclick="loadAllDefaultPhases()">🔄 Carregar/Restaurar Fases Padrão</button>
+      <button class="btn btn-danger btn-small" style="margin-top:15px;" onclick="resetAllData()">⚠️ Limpar Tudo e Resetar Dados</button>
     </div>
 
     <!-- TAB 4: Cadastrar/Editar Turmas -->
@@ -235,21 +229,6 @@
     <button class="btn" onclick="showScreen('screen-login')" style="margin-top:20px;">Voltar ao Início</button>
   </div>
 
-</div>
-
-<div id="edit-modal" class="modal-overlay">
-  <div class="modal-content">
-    <h2>✏️ Editar Conteúdo da Fase</h2>
-    <div class="input-group">
-      <label>Título da Fase:</label>
-      <input type="text" id="edit-phase-title">
-    </div>
-    
-    <div id="edit-words-container"></div>
-
-    <button class="btn btn-success" onclick="savePhaseEdit()">Salvar Alterações da Fase</button>
-    <button class="btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
-  </div>
 </div>
 
 <script>
@@ -413,8 +392,8 @@
         { name: "TATU", syllables: ["TA", "TU"], options: ["MA", "TE"], img: "imagens/tatu.png" },
         { name: "BALA", syllables: ["BA", "LA"], options: ["BO", "VE"], img: "imagens/bala.png" }
       ]
-    }
-  ];
+    },
+    {
       id: "phase_17",
       title: "Fase 17",
       words: [
@@ -422,9 +401,9 @@
         { name: "VACA", syllables: ["VA", "CA"], options: ["VI", "CE"], img: "imagens/vaca.png" },
         { name: "COPO", syllables: ["CO", "PO"], options: ["CA", "TE"], img: "imagens/copo.png" },
         { name: "MURO", syllables: ["MU", "RO"], options: ["MO", "RE"], img: "imagens/muro.png" }
-     ]
-    }
-  ];
+      ]
+    },
+    {
       id: "phase_18",
       title: "Fase 18",
       words: [
@@ -432,12 +411,12 @@
         { name: "MESA", syllables: ["ME", "SA"], options: ["MA", "SE"], img: "imagens/mesa.png" },
         { name: "RATO", syllables: ["RA", "TO"], options: ["RI", "TE"], img: "imagens/rato.png" },
         { name: "SAIA", syllables: ["SA", "IA"], options: ["SO", "AI"], img: "imagens/saia.png" }
-     ]
+      ]
     }
   ];
-  
+
   let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["Infantil V", "1º Ano A", "1º Ano B"];
-  let dbPhaseBank = DEFAULT_PHASES; 
+  let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phases")) || DEFAULT_PHASES; 
   let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {}; 
   let dbRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
 
@@ -447,7 +426,6 @@
   let selectedSlot = null;
   let totalScore = 0;
   let phaseFinished = false;
-  let editingPhaseId = null;
 
   function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -473,13 +451,14 @@
     }
 
     const searchPin = String(rawPin).toUpperCase();
-    
-    // Força carregar sempre todas as 16 fases padrão para INF5 e AGO1
     let activePhases = dbPhaseBank;
     let className = "Infantil V";
 
     if (dbGames[searchPin]) {
       className = dbGames[searchPin].className || className;
+      if (dbGames[searchPin].phases && dbGames[searchPin].phases.length > 0) {
+        activePhases = dbGames[searchPin].phases;
+      }
     } else if (searchPin !== "INF5" && searchPin !== "AGO1") {
       alert("PIN não encontrado! Verifique se digitou corretamente.");
       return;
@@ -550,7 +529,6 @@
         slotsContainer.appendChild(slot);
       });
       row.appendChild(slotsContainer);
-
       wordsColumn.appendChild(row);
     });
 
@@ -605,7 +583,6 @@
     selectedSlot.classList.add("filled");
 
     optionBtn.classList.add("hidden");
-
     selectedSlot = null;
   }
 
@@ -710,7 +687,6 @@
   function renderAdminForm() {
     const container = document.getElementById("words-form-container");
     container.innerHTML = "";
-
     const defaultImages = ["imagens/copo.png", "imagens/mola.png", "imagens/cafe.png", "imagens/rato.png"];
 
     for (let i = 0; i < 4; i++) {
@@ -737,40 +713,30 @@
 
   function saveNewPhaseToBank() {
     const title = document.getElementById("phase-title-input").value.trim() || `Fase ${dbPhaseBank.length + 1}`;
-
+    const imgInputs = document.querySelectorAll(".admin-img-path");
     const correctInputs = document.querySelectorAll(".admin-correct-syl");
-    const optionsInputs = document.querySelectorAll(".admin-options-syl");
-    const pathInputs = document.querySelectorAll(".admin-img-path");
+    const optionInputs = document.querySelectorAll(".admin-options-syl");
 
-    let wordsList = [];
-
+    const words = [];
     for (let i = 0; i < 4; i++) {
-      const correctText = correctInputs[i].value.trim().toUpperCase();
-      const optionsText = optionsInputs[i].value.trim().toUpperCase();
-      const imgPath = pathInputs[i].value.trim() || "imagens/copo.png";
-
-      if (!correctText) {
-        alert(`Preencha as sílabas corretas da Palavra ${i + 1}!`);
+      const correctStr = correctInputs[i].value.trim().toUpperCase();
+      if (!correctStr) {
+        alert(`Por favor, preencha as sílabas corretas para a Palavra ${i + 1}`);
         return;
       }
+      const syllables = correctStr.split("-").map(s => s.trim());
+      const name = syllables.join("");
+      const optionsStr = optionInputs[i].value.trim().toUpperCase();
+      const options = optionsStr ? optionsStr.split(",").map(s => s.trim()) : [];
+      const img = imgInputs[i].value.trim() || "imagens/default.png";
 
-      wordsList.push({
-        name: correctText.replace(/-/g, ""),
-        syllables: correctText.split("-"),
-        options: optionsText ? optionsText.split(",").map(s => s.trim()) : [],
-        img: imgPath
-      });
+      words.push({ name, syllables, options, img });
     }
 
-    const newPhaseObj = {
-      id: "phase_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
-      title: title,
-      words: wordsList
-    };
-
-    dbPhaseBank.push(newPhaseObj);
-    
-    alert(`Fase "${title}" cadastrada com sucesso!`);
+    const newPhase = { id: `phase_${Date.now()}`, title, words };
+    dbPhaseBank.push(newPhase);
+    localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
+    alert("Fase salva com sucesso no Banco!");
     document.getElementById("phase-title-input").value = "";
     renderAdminForm();
   }
@@ -778,162 +744,148 @@
   function renderAvailablePhasesCheckboxes() {
     const container = document.getElementById("available-phases-checkboxes");
     container.innerHTML = "";
-
-    dbPhaseBank.forEach((phase, idx) => {
-      const wordsPreview = phase.words.map(w => w.syllables.join("")).join(", ");
+    dbPhaseBank.forEach(phase => {
       container.innerHTML += `
         <label class="checkbox-item">
-          <input type="checkbox" value="${phase.id}" class="phase-checkbox" checked>
-          <span><strong>${phase.title || 'Fase ' + (idx + 1)}</strong> — Palavras: [${wordsPreview}]</span>
+          <input type="checkbox" value="${phase.id}" checked>
+          <span>${phase.title} (${phase.words.length} palavras)</span>
         </label>
       `;
     });
   }
 
   function createGameWithSelectedPhases() {
-    const rawPin = document.getElementById("new-pin").value.trim();
+    const pin = document.getElementById("new-pin").value.trim().toUpperCase();
     const className = document.getElementById("new-game-class").value;
+
+    if (!pin) { alert("Defina um PIN!"); return; }
     
-    if (!rawPin) { alert("Digite um PIN!"); return; }
-    if (!className) { alert("Selecione uma turma!"); return; }
+    const checkboxes = document.querySelectorAll("#available-phases-checkboxes input:checked");
+    const selectedIds = Array.from(checkboxes).map(cb => cb.value);
 
-    const pin = String(rawPin).toUpperCase();
+    if (selectedIds.length === 0) { alert("Selecione ao menos 1 fase!"); return; }
 
-    dbGames[pin] = {
-      className: className,
-      phaseIds: dbPhaseBank.map(p => p.id)
-    };
-
+    const selectedPhases = dbPhaseBank.filter(p => selectedIds.includes(p.id));
+    dbGames[pin] = { className, phases: selectedPhases };
     localStorage.setItem("syllable_games", JSON.stringify(dbGames));
-    alert(`Jogo cadastrado com sucesso! PIN: ${pin} | Turma: ${className}`);
+
+    alert(`Jogo criado para a turma ${className} com o PIN: ${pin}`);
     document.getElementById("new-pin").value = "";
   }
 
   function renderManageGamesAndPhases() {
     const gamesContainer = document.getElementById("games-manage-list");
     gamesContainer.innerHTML = "";
-
-    const pins = Array.from(new Set(["INF5", "AGO1", ...Object.keys(dbGames)]));
-    pins.forEach(pin => {
-      gamesContainer.innerHTML += `
-        <div class="phase-card">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-            <div>
-              <h4 style="margin:0;">PIN: ${pin} | Turma: Infantil V</h4>
-              <p style="font-size:14px; color:#555; margin-top:5px;"><strong>Fases Incluídas:</strong> 16 fases ativas</p>
-            </div>
+    
+    if (Object.keys(dbGames).length === 0) {
+      gamesContainer.innerHTML = "<p>Nenhum jogo criado ainda.</p>";
+    } else {
+      for (let pin in dbGames) {
+        gamesContainer.innerHTML += `
+          <div class="class-list-item">
+            <span><strong>PIN: ${pin}</strong> - Turma: ${dbGames[pin].className} (${dbGames[pin].phases.length} Fases)</span>
+            <button class="btn btn-danger btn-small" onclick="deleteGame('${pin}')">Excluir Jogo</button>
           </div>
+        `;
+      }
+    }
+
+    const phasesContainer = document.getElementById("bank-phases-list");
+    phasesContainer.innerHTML = "";
+    dbPhaseBank.forEach((phase) => {
+      phasesContainer.innerHTML += `
+        <div class="class-list-item">
+          <span><strong>${phase.title}</strong> (${phase.words.map(w=>w.name).join(", ")})</span>
         </div>
       `;
     });
+  }
 
-    const bankContainer = document.getElementById("bank-phases-list");
-    bankContainer.innerHTML = "";
-
-    dbPhaseBank.forEach((p, idx) => {
-      const wordsStr = p.words.map(w => w.syllables.join("")).join(", ");
-      bankContainer.innerHTML += `
-        <div class="phase-card">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-            <div>
-              <h4 style="margin:0;">${p.title || 'Fase ' + (idx + 1)}</h4>
-              <p style="font-size:14px; color:#555; margin-top:5px;"><strong>Palavras:</strong> [${wordsStr}]</p>
-            </div>
-          </div>
-        </div>
-      `;
-    });
+  function deleteGame(pin) {
+    if (confirm(`Deseja excluir o jogo com PIN ${pin}?`)) {
+      delete dbGames[pin];
+      localStorage.setItem("syllable_games", JSON.stringify(dbGames));
+      renderManageGamesAndPhases();
+    }
   }
 
   function loadAllDefaultPhases() {
     dbPhaseBank = DEFAULT_PHASES;
+    localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
+    alert("Todas as 18 Fases Padrão foram restauradas no banco de dados!");
     renderManageGamesAndPhases();
-    alert("As 16 fases foram restauradas no banco de dados!");
   }
 
   function resetAllData() {
-    if (confirm("Isto redefinirá os dados salvos para os padrões iniciais. Deseja continuar?")) {
+    if (confirm("Deseja apagar todos os dados cadastrados, rankings e turmas?")) {
       localStorage.clear();
+      dbClasses = ["Infantil V", "1º Ano A", "1º Ano B"];
       dbPhaseBank = DEFAULT_PHASES;
+      dbGames = {};
       dbRankings = [];
-      alert("Dados redefinidos com sucesso!");
-      location.reload();
+      alert("Sistema resetado para as configurações iniciais!");
+      showAdminTab('manage');
     }
   }
 
   function addNewClass() {
     const input = document.getElementById("class-name-input");
     const name = input.value.trim();
-    if (!name) { alert("Digite um nome para a turma!"); return; }
-    if (dbClasses.includes(name)) { alert("Esta turma já está cadastrada!"); return; }
-
+    if (!name) return;
     dbClasses.push(name);
     localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
     input.value = "";
     renderClassesList();
-    updateClassDropdown();
-    alert(`Turma "${name}" adicionada!`);
-  }
-
-  function deleteClass(className) {
-    if (confirm(`Deseja excluir a turma "${className}"?`)) {
-      dbClasses = dbClasses.filter(c => c !== className);
-      localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
-      renderClassesList();
-      updateClassDropdown();
-    }
   }
 
   function renderClassesList() {
-    const list = document.getElementById("classes-list");
-    list.innerHTML = "";
-    if (dbClasses.length === 0) {
-      list.innerHTML = "<p>Nenhuma turma cadastrada.</p>";
-      return;
-    }
-    dbClasses.forEach(c => {
-      list.innerHTML += `
+    const container = document.getElementById("classes-list");
+    container.innerHTML = "";
+    dbClasses.forEach((c, index) => {
+      container.innerHTML += `
         <div class="class-list-item">
-          <span><strong>${c}</strong></span>
-          <button class="btn btn-danger btn-small" onclick="deleteClass('${c}')">🗑️ Excluir</button>
+          <span>${c}</span>
+          <button class="btn btn-danger btn-small" onclick="removeClass(${index})">Remover</button>
         </div>
       `;
     });
   }
 
+  function removeClass(index) {
+    dbClasses.splice(index, 1);
+    localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
+    renderClassesList();
+  }
+
   function renderRankingTable() {
     const filterSelect = document.getElementById("rank-filter-pin");
-    filterSelect.innerHTML = '<option value="ALL">Todos os PINs</option><option value="INF5">INF5</option><option value="AGO1">AGO1</option>';
+    filterSelect.innerHTML = '<option value="ALL">Todos os PINs</option>';
+    
+    const pins = [...new Set(dbRankings.map(r => r.pin))];
+    pins.forEach(p => {
+      filterSelect.innerHTML += `<option value="${p}">${p}</option>`;
+    });
 
+    const selectedPin = filterSelect.value;
     const tbody = document.getElementById("ranking-table-body");
     tbody.innerHTML = "";
 
-    let filtered = [...dbRankings];
-    if (filterSelect.value !== "ALL") {
-      filtered = filtered.filter(r => r.pin === filterSelect.value);
+    let filtered = dbRankings;
+    if (selectedPin !== "ALL") {
+      filtered = filtered.filter(r => r.pin === selectedPin);
     }
 
     filtered.sort((a, b) => b.score - a.score);
 
-    if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6">Nenhum resultado registrado ainda.</td></tr>';
-      return;
-    }
-
     filtered.forEach((r, idx) => {
-      let posBadge = `<span class="pos-badge">${idx + 1}º</span>`;
-      if (idx === 0) posBadge = `<span class="pos-badge pos-1">🥇 1º</span>`;
-      if (idx === 1) posBadge = `<span class="pos-badge pos-2">🥈 2º</span>`;
-      if (idx === 2) posBadge = `<span class="pos-badge pos-3">🥉 3º</span>`;
-
       tbody.innerHTML += `
         <tr>
-          <td>${posBadge}</td>
-          <td><strong>${r.student}</strong></td>
-          <td>${r.className || '-'}</td>
-          <td><code>${r.pin}</code></td>
-          <td style="font-weight:bold; color:#27ae60;">${r.score} pts</td>
-          <td style="font-size:12px; color:#666;">${r.date}</td>
+          <td><strong>${idx + 1}º</strong></td>
+          <td>${r.student}</td>
+          <td>${r.className}</td>
+          <td>${r.pin}</td>
+          <td><strong>${r.score}</strong></td>
+          <td>${r.date}</td>
         </tr>
       `;
     });
