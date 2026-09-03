@@ -719,8 +719,7 @@
     dbPhaseBank.forEach(phase => {
       container.innerHTML += `
         <label class="checkbox-item">
-          <input type="checkbox" value="${phase.id}" checked>
-          <span>${phase.title} (${phase.words.length} palavras)</span>
+          <input type="checkbox" value="${phase.id}" checked> ${phase.title} (${phase.words.length} palavras)
         </label>
       `;
     });
@@ -729,138 +728,134 @@
   function createGameWithSelectedPhases() {
     const pin = document.getElementById("new-pin").value.trim().toUpperCase();
     const className = document.getElementById("new-game-class").value;
+    const checkboxes = document.querySelectorAll("#available-phases-checkboxes input[type='checkbox']:checked");
 
-    if (!pin) { alert("Defina um PIN!"); return; }
-    
-    const checkboxes = document.querySelectorAll("#available-phases-checkboxes input:checked");
+    if (!pin) {
+      alert("Digite um PIN para o jogo!");
+      return;
+    }
+    if (!className) {
+      alert("Selecione uma turma!");
+      return;
+    }
+    if (checkboxes.length === 0) {
+      alert("Selecione pelo menos uma fase!");
+      return;
+    }
+
     const selectedIds = Array.from(checkboxes).map(cb => cb.value);
-
-    if (selectedIds.length === 0) { alert("Selecione ao menos 1 fase!"); return; }
-
     const selectedPhases = dbPhaseBank.filter(p => selectedIds.includes(p.id));
+
     dbGames[pin] = { className, phases: selectedPhases };
     localStorage.setItem("syllable_games", JSON.stringify(dbGames));
-
-    alert(`Jogo criado para a turma ${className} com o PIN: ${pin}`);
+    alert(`Jogo cadastrado com sucesso! PIN: ${pin}`);
     document.getElementById("new-pin").value = "";
   }
 
   function renderManageGamesAndPhases() {
-    const gamesContainer = document.getElementById("games-manage-list");
-    gamesContainer.innerHTML = "";
-    
-    if (Object.keys(dbGames).length === 0) {
-      gamesContainer.innerHTML = "<p>Nenhum jogo criado ainda.</p>";
-    } else {
-      for (let pin in dbGames) {
-        gamesContainer.innerHTML += `
-          <div class="class-list-item">
-            <span><strong>PIN: ${pin}</strong> - Turma: ${dbGames[pin].className} (${dbGames[pin].phases.length} Fases)</span>
-            <button class="btn btn-danger btn-small" onclick="deleteGame('${pin}')">Excluir Jogo</button>
-          </div>
-        `;
-      }
-    }
-
-    const phasesContainer = document.getElementById("bank-phases-list");
-    phasesContainer.innerHTML = "";
-    dbPhaseBank.forEach((phase) => {
-      phasesContainer.innerHTML += `
+    const gamesList = document.getElementById("games-manage-list");
+    gamesList.innerHTML = "";
+    Object.keys(dbGames).forEach(pin => {
+      const g = dbGames[pin];
+      gamesList.innerHTML += `
         <div class="class-list-item">
-          <span><strong>${phase.title}</strong> (${phase.words.map(w=>w.name).join(", ")})</span>
+          <div>
+            <strong>PIN: ${pin}</strong> - Turma: ${g.className} (${g.phases ? g.phases.length : 0} fases)
+          </div>
+          <button class="btn btn-danger btn-small" onclick="deleteGame('${pin}')">Excluir Jogo</button>
+        </div>
+      `;
+    });
+
+    const phasesList = document.getElementById("bank-phases-list");
+    phasesList.innerHTML = "";
+    dbPhaseBank.forEach(phase => {
+      phasesList.innerHTML += `
+        <div class="class-list-item">
+          <div>
+            <strong>${phase.title}</strong> - Palavras: ${phase.words.map(w => w.name).join(", ")}
+          </div>
+          <button class="btn btn-danger btn-small" onclick="deletePhase('${phase.id}')">Excluir Fase</button>
         </div>
       `;
     });
   }
 
   function deleteGame(pin) {
-    if (confirm(`Deseja excluir o jogo com PIN ${pin}?`)) {
+    if (confirm(`Deseja remover o jogo do PIN ${pin}?`)) {
       delete dbGames[pin];
       localStorage.setItem("syllable_games", JSON.stringify(dbGames));
       renderManageGamesAndPhases();
     }
   }
 
-  function loadAllDefaultPhases() {
-    dbPhaseBank = DEFAULT_PHASES;
-    localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
-    alert("Todas as 18 Fases Padrão foram restauradas no banco de dados!");
-    renderManageGamesAndPhases();
-  }
-
-  function resetAllData() {
-    if (confirm("Deseja apagar todos os dados cadastrados, rankings e turmas?")) {
-      localStorage.clear();
-      dbClasses = ["Infantil V", "1º Ano A", "1º Ano B"];
-      dbPhaseBank = DEFAULT_PHASES;
-      dbGames = DEFAULT_GAMES;
-      alert("Sistema resetado para as configurações iniciais!");
-      showAdminTab('manage');
+  function deletePhase(phaseId) {
+    if (confirm("Deseja remover esta fase do Banco de Dados?")) {
+      dbPhaseBank = dbPhaseBank.filter(p => p.id !== phaseId);
+      localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
+      renderManageGamesAndPhases();
     }
   }
 
   function addNewClass() {
     const input = document.getElementById("class-name-input");
-    const name = input.value.trim();
-    if (!name) return;
-    dbClasses.push(name);
-    localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
-    input.value = "";
-    renderClassesList();
+    const val = input.value.trim();
+    if (!val) return;
+    if (!dbClasses.includes(val)) {
+      dbClasses.push(val);
+      localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
+      input.value = "";
+      renderClassesList();
+      updateClassDropdown();
+    }
   }
 
   function renderClassesList() {
-    const container = document.getElementById("classes-list");
-    container.innerHTML = "";
-    dbClasses.forEach((c, index) => {
-      container.innerHTML += `
+    const list = document.getElementById("classes-list");
+    list.innerHTML = "";
+    dbClasses.forEach(c => {
+      list.innerHTML += `
         <div class="class-list-item">
           <span>${c}</span>
-          <button class="btn btn-danger btn-small" onclick="removeClass(${index})">Remover</button>
+          <button class="btn btn-danger btn-small" onclick="removeClass('${c}')">Remover</button>
         </div>
       `;
     });
   }
 
-  function removeClass(index) {
-    dbClasses.splice(index, 1);
+  function removeClass(className) {
+    dbClasses = dbClasses.filter(c => c !== className);
     localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
     renderClassesList();
+    updateClassDropdown();
   }
 
   function renderRankingTable() {
-    const currentRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
-    const filterSelect = document.getElementById("rank-filter-pin");
-    const currentSelected = filterSelect.value || "ALL";
+    const select = document.getElementById("rank-filter-pin");
+    const currentSelected = select.value;
+    select.innerHTML = '<option value="ALL">Todos os PINs</option>';
     
-    filterSelect.innerHTML = '<option value="ALL">Todos os PINs</option>';
-    
-    const allActivePins = [...new Set([...Object.keys(dbGames), ...currentRankings.map(r => r.pin)])];
-    allActivePins.forEach(p => {
-      filterSelect.innerHTML += `<option value="${p}">${p}</option>`;
+    Object.keys(dbGames).forEach(p => {
+      select.innerHTML += `<option value="${p}">${p} (${dbGames[p].className})</option>`;
     });
+    select.value = currentSelected || "ALL";
 
-    filterSelect.value = currentSelected;
+    const filterPin = select.value;
+    let rankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
+
+    if (filterPin !== "ALL") {
+      rankings = rankings.filter(r => r.pin === filterPin);
+    }
+
+    rankings.sort((a, b) => b.score - a.score);
 
     const tbody = document.getElementById("ranking-table-body");
     tbody.innerHTML = "";
 
-    let filtered = currentRankings;
-    if (filterSelect.value !== "ALL") {
-      filtered = filtered.filter(r => r.pin === filterSelect.value);
-    }
-
-    filtered.sort((a, b) => b.score - a.score);
-
-    if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6">Nenhum resultado registrado para este PIN ainda.</td></tr>`;
-      return;
-    }
-
-    filtered.forEach((r, idx) => {
+    rankings.forEach((r, idx) => {
       tbody.innerHTML += `
         <tr>
-          <td><strong>${idx + 1}º</strong></td>
+          <td>${idx + 1}º</td>
           <td>${r.student}</td>
           <td>${r.className}</td>
           <td>${r.pin}</td>
@@ -869,6 +864,25 @@
         </tr>
       `;
     });
+  }
+
+  function loadAllDefaultPhases() {
+    if (confirm("Isso irá restaurar o banco com as 18 fases padrão. Deseja continuar?")) {
+      dbPhaseBank = DEFAULT_PHASES;
+      localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
+      renderManageGamesAndPhases();
+    }
+  }
+
+  function resetAllData() {
+    if (confirm("ATENÇÃO: Isso apagará todas as fases, PINs, turmas e históricos de ranking cadastrados!")) {
+      localStorage.clear();
+      dbClasses = ["Infantil V", "1º Ano A", "1º Ano B"];
+      dbPhaseBank = DEFAULT_PHASES;
+      dbGames = Object.assign({}, DEFAULT_GAMES);
+      alert("Dados resetados!");
+      location.reload();
+    }
   }
 </script>
 </body>
