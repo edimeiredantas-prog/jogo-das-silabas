@@ -3,197 +3,145 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gerenciador de Jogos e Fases</title>
+  <title>Plataforma - Jogo das Sílabas</title>
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+    body { background-color: #f4f7f6; color: #333; padding: 20px; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 1050px; background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    
+    .screen { display: none; }
+    .screen.active { display: block; }
 
-    body {
-      background-color: #f4f6f9;
-      margin: 0;
-      padding: 20px;
-      color: #333;
-    }
+    h1, h2, h3, h4 { text-align: center; color: #2c3e50; margin-bottom: 15px; }
+    .btn { background: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; margin-top: 10px; }
+    .btn:hover { background: #2980b9; }
+    .btn-success { background: #2ecc71; }
+    .btn-success:hover { background: #27ae60; }
+    .btn-danger { background: #e74c3c; }
+    .btn-danger:hover { background: #c0392b; }
+    .btn-secondary { background: #95a5a6; }
+    .btn-small { width: auto; padding: 6px 12px; font-size: 14px; margin-top: 0; display: inline-block; }
+    .btn-warning { background: #f39c12; }
+    .btn-warning:hover { background: #d68910; }
+    .input-group { margin-bottom: 15px; }
+    .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+    .input-group input, .input-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
 
-    .admin-container {
-      max-width: 900px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 25px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
+    .game-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; margin-top: 20px; }
+    .words-column { display: flex; flex-direction: column; gap: 15px; }
+    
+    .word-row { display: grid; grid-template-columns: 90px 1fr; gap: 15px; align-items: center; background: #fafafa; padding: 12px; border-radius: 8px; border: 1px solid #ddd; }
+    .img-box { width: 85px; height: 85px; border: 2px solid #333; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; }
+    .img-box img { width: 100%; height: 100%; object-fit: cover; }
+    
+    .slots-container { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .slot { width: 60px; height: 60px; background: white; border: 2px solid #333; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; cursor: pointer; user-select: none; position: relative; transition: all 0.2s ease; }
+    
+    .slot.selected { border: 4px solid #f39c12; background-color: #fef9e7; }
+    .slot.filled { background-color: #ebf5fb; border-color: #3498db; }
+    
+    .slot.correct { background-color: #d4edda !important; border-color: #28a745 !important; color: #155724; cursor: default; }
+    .slot.correct::after { content: "✓"; position: absolute; top: 2px; right: 4px; font-size: 12px; color: #28a745; font-weight: bold; }
+    .slot.wrong { background-color: #f8d7da !important; border-color: #dc3545 !important; color: #721c24; cursor: default; }
+    .slot.wrong::after { content: "✕"; position: absolute; top: 2px; right: 4px; font-size: 12px; color: #dc3545; font-weight: bold; }
 
-    h2 {
-      margin-top: 0;
-      color: #2c3e50;
-      border-bottom: 2px solid #ecf0f1;
-      padding-bottom: 10px;
-    }
+    .sidebar-options { background: #f8f9fa; border: 2px dashed #bdc3c7; border-radius: 8px; padding: 12px 10px; text-align: center; }
+    .sidebar-options h3 { font-size: 16px; margin-bottom: 12px; color: #2c3e50; }
+    .options-grid { display: grid; grid-template-columns: repeat(4, 55px); gap: 8px; justify-content: center; min-height: 150px; }
+    
+    .option { width: 55px; height: 55px; background: white; border: 2px solid #333; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: bold; cursor: pointer; user-select: none; transition: all 0.2s ease; }
+    .option:hover { background-color: #ebf5fb; transform: translateY(-2px); }
+    .option.hidden { display: none !important; }
 
-    h3 {
-      color: #34495e;
-      margin-top: 0;
-    }
-
-    .input-group {
-      margin-bottom: 18px;
-    }
-
-    .input-group label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 6px;
-    }
-
-    .input-group input[type="text"],
-    .input-group select {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 14px;
-      background-color: #fff;
-    }
-
-    .checkbox-list {
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      max-height: 280px;
-      overflow-y: auto;
-      padding: 10px;
-      background-color: #fafafa;
-    }
-
-    .checkbox-item {
-      display: flex;
-      align-items: center;
-      padding: 8px;
-      border-bottom: 1px solid #eee;
-      gap: 10px;
-      font-size: 14px;
-    }
-
-    .checkbox-item:last-child {
-      border-bottom: none;
-    }
-
-    .checkbox-item input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-    }
-
-    .type-tag {
-      background-color: #95a5a6;
-      color: #fff;
-      font-size: 11px;
-      font-weight: bold;
-      padding: 3px 8px;
-      border-radius: 4px;
-      margin-left: 5px;
-    }
-
-    .btn {
-      padding: 10px 18px;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background 0.2s;
-    }
-
-    .btn-success {
-      background-color: #27ae60;
-      color: white;
-    }
-
-    .btn-success:hover {
-      background-color: #219150;
-    }
-
-    .btn-primary {
-      background-color: #3498db;
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background-color: #2980b9;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      border-bottom: 2px solid #ddd;
-    }
-
-    .tab-btn {
-      padding: 10px 15px;
-      background: #e0e0e0;
-      border: none;
-      border-radius: 6px 6px 0 0;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .tab-btn.active {
-      background: #3498db;
-      color: white;
-    }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+    th { background-color: #34495e; color: white; }
+    .badge { padding: 6px 12px; border-radius: 4px; background: #3498db; color: white; font-size: 14px; font-weight: bold; }
+    .phase-card { background: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: left; }
+    .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .nav-tabs .btn { flex: 1; min-width: 140px; margin-top: 0; }
+    .class-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; background: #fafafa; border-radius: 6px; margin-bottom: 8px; }
+    
+    .checkbox-list { display: flex; flex-direction: column; gap: 8px; background: #fff; padding: 10px; border: 1px solid #ccc; border-radius: 6px; max-height: 250px; overflow-y: auto; }
+    .checkbox-item { display: flex; align-items: center; gap: 10px; font-size: 15px; cursor: pointer; }
+    .checkbox-item input { width: 18px; height: 18px; cursor: pointer; }
+    .type-tag { font-size: 11px; padding: 2px 6px; border-radius: 3px; background: #95a5a6; color: white; font-weight: bold; margin-left: 5px; }
   </style>
 </head>
 <body>
 
-  <div class="admin-container">
-    <h2>Painel do Professor / Administrador</h2>
+<div class="container">
 
-    <!-- Abas de Navegação -->
-    <div class="tabs">
-      <button class="tab-btn" id="btn-tab-1" onclick="switchTab(1)">1. Cadastrar Fase</button>
-      <button class="tab-btn active" id="btn-tab-2" onclick="switchTab(2)">2. Criar Jogo p/ Turma</button>
+  <!-- 1. TELA INICIAL (LOGIN ALUNO) -->
+  <div id="screen-login" class="screen active">
+    <h1>🎮 Jogo das Sílabas</h1>
+    <div class="input-group">
+      <label>PIN do Jogo:</label>
+      <input type="text" id="player-pin" placeholder="Ex: 1AGO, INF5 ou TRI1" style="text-transform: uppercase;">
+    </div>
+    <div class="input-group">
+      <label>Seu Nome (máximo 15 caracteres):</label>
+      <input type="text" id="player-name" maxlength="15" placeholder="Digite seu nome">
+    </div>
+    <button class="btn btn-success" onclick="startStudentGame()">Entrar e Jogar</button>
+    <hr style="margin: 20px 0;">
+    <button class="btn btn-secondary" onclick="showScreen('screen-admin-login')">Área do Professor / Admin</button>
+  </div>
+
+  <!-- 2. TELA LOGIN ADMIN -->
+  <div id="screen-admin-login" class="screen">
+    <h2>🔐 Acesso do Professor</h2>
+    <div class="input-group">
+      <label>Senha de Acesso:</label>
+      <input type="password" id="admin-pass" placeholder="Senha padrão: admin">
+    </div>
+    <button class="btn" onclick="loginAdmin()">Acessar Painel</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-login')">Voltar</button>
+  </div>
+
+  <!-- 3. PAINEL ADMIN -->
+  <div id="screen-admin-panel" class="screen">
+    <h2>⚙️ Painel do Professor</h2>
+    
+    <div class="nav-tabs">
+      <button class="btn" onclick="showAdminTab('create-phase')">➕ 1. Cadastrar Fase</button>
+      <button class="btn btn-success" onclick="showAdminTab('assign-game')">🎮 2. Criar Jogo p/ Turma</button>
+      <button class="btn btn-warning" onclick="showAdminTab('manage')">📁 Gerenciar Jogos e Fases</button>
+      <button class="btn btn-secondary" onclick="showAdminTab('classes')">🏫 Turmas</button>
+      <button class="btn btn-success" onclick="showAdminTab('ranking')">📊 Ranking</button>
     </div>
 
-    <!-- TAB 1: Cadastrar Fase -->
-    <div id="admin-tab-create-phase" style="display:none;">
-      <h3>1. Cadastrar Nova Fase</h3>
+    <!-- TAB 1: Cadastrar Nova Fase -->
+    <div id="admin-tab-create-phase">
+      <h3>1. Cadastrar Fase no Banco de Dados</h3>
+      
       <div class="input-group">
-        <label>Título da Fase (ex: Fase 20 - Mala):</label>
-        <input type="text" id="new-phase-title" placeholder="Ex: Fase 20 (2 Sílabas)">
-      </div>
-      <div class="input-group">
-        <label>Caminho da Imagem no GitHub/Servidor:</label>
-        <input type="text" id="new-phase-img" placeholder="Ex: imagens/mala.png">
-      </div>
-      <div class="input-group">
-        <label>Quantidade de Sílabas:</label>
-        <select id="new-phase-syllables">
-          <option value="2">2 Sílabas</option>
-          <option value="3">3 Sílabas</option>
+        <label>Tipo de Fase (Quantidade de Sílabas):</label>
+        <select id="phase-type-select" onchange="renderAdminForm()">
+          <option value="2">Palavras de 2 Sílabas (Dissílabas)</option>
+          <option value="3">Palavras de 3 Sílabas (Trissílabas)</option>
         </select>
       </div>
-      <button class="btn btn-primary" onclick="saveNewPhase()">Salvar Fase no Banco</button>
+
+      <div class="input-group">
+        <label>Nome/Título da Fase:</label>
+        <input type="text" id="phase-title-input" placeholder="Ex: Fase 19 - Trissílabas">
+      </div>
+
+      <div id="words-form-container"></div>
+      <button class="btn btn-success" onclick="saveNewPhaseToBank()">Salvar Fase no Banco</button>
     </div>
 
     <!-- TAB 2: Criar Jogo / Associar Fases a uma Turma -->
-    <div id="admin-tab-assign-game">
+    <div id="admin-tab-assign-game" style="display:none;">
       <h3>2. Criar Jogo (PIN) para uma Turma</h3>
-      
       <div class="input-group">
         <label>Defina o PIN do Jogo (ex: 1AGO, INF5, TRI1):</label>
-        <input type="text" id="new-pin" placeholder="EX: TRI1" style="text-transform: uppercase;">
+        <input type="text" id="new-pin" placeholder="Ex: TRI1" style="text-transform: uppercase;">
       </div>
-
       <div class="input-group">
         <label>Selecione a Turma:</label>
-        <select id="new-game-class">
-          <option value="1a">1º Ano A</option>
-          <option value="1b">1º Ano B</option>
-          <option value="2a">2º Ano A</option>
-        </select>
+        <select id="new-game-class"></select>
       </div>
 
       <div class="input-group">
@@ -206,167 +154,809 @@
       </div>
 
       <div class="input-group">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <label style="margin-bottom: 0;">Marque as Fases que farão parte deste Jogo/PIN:</label>
-          <label style="font-weight: bold; cursor: pointer; user-select: none; font-size: 14px;">
-            <input type="checkbox" id="select-all-phases-chk" checked onchange="toggleSelectAllPhases(this)">
-            Selecionar / Desmarcar Todos
-          </label>
-        </div>
+        <label>Marque as Fases que farão parte deste Jogo/PIN:</label>
         <div id="available-phases-checkboxes" class="checkbox-list"></div>
       </div>
-
       <button class="btn btn-success" onclick="createGameWithSelectedPhases()">Gerar Jogo para a Turma</button>
     </div>
+
+    <!-- TAB 3: Gerenciar Jogos e Fases -->
+    <div id="admin-tab-manage" style="display:none;">
+      <h3>Jogos Ativos (PINs por Turma)</h3>
+      <div id="games-manage-list"></div>
+      <hr style="margin: 25px 0;">
+      <h3>Banco de Fases Cadastradas</h3>
+      <div id="bank-phases-list"></div>
+      <button class="btn btn-warning btn-small" style="margin-top:15px; margin-right:10px;" onclick="loadAllDefaultPhases()">🔄 Carregar/Restaurar 18 Fases Padrão</button>
+      <button class="btn btn-danger btn-small" style="margin-top:15px;" onclick="resetAllData()">⚠️ Limpar Tudo e Resetar Dados</button>
+    </div>
+
+    <!-- TAB 4: Cadastrar/Editar Turmas -->
+    <div id="admin-tab-classes" style="display:none;">
+      <h3>Gerenciar Turmas</h3>
+      <div class="input-group">
+        <label>Nome da Nova Turma:</label>
+        <input type="text" id="class-name-input" placeholder="Ex: 1º Ano A, Infantil V">
+      </div>
+      <button class="btn btn-success" onclick="addNewClass()">Adicionar Turma</button>
+      <h4 style="margin-top:20px; margin-bottom:10px;">Turmas Cadastradas:</h4>
+      <div id="classes-list"></div>
+    </div>
+
+    <!-- TAB 5: Ranking -->
+    <div id="admin-tab-ranking" style="display:none;">
+      <h3>🏆 Ranking dos Alunos</h3>
+      <div class="input-group">
+        <label>Filtrar por PIN do Jogo:</label>
+        <select id="rank-filter-pin" onchange="renderRankingTable()"></select>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 100px;">Posição</th>
+            <th>Aluno</th>
+            <th>Turma</th>
+            <th>PIN</th>
+            <th>Pontuação</th>
+            <th>Data/Hora</th>
+          </tr>
+        </thead>
+        <tbody id="ranking-table-body"></tbody>
+      </table>
+    </div>
+
+    <button class="btn btn-secondary" style="margin-top:20px;" onclick="showScreen('screen-login')">Sair do Painel</button>
   </div>
 
-  <script>
-    // Fases de exemplo padrão
-    const defaultPhases = [
-      { id: 13, title: "Fase 13 (2 Sílabas)", syllablesCount: 2, image: "imagens/fase13.png" },
-      { id: 14, title: "Fase 14 (2 Sílabas)", syllablesCount: 2, image: "imagens/fase14.png" },
-      { id: 15, title: "Fase 15 (2 Sílabas)", syllablesCount: 2, image: "imagens/fase15.png" },
-      { id: 16, title: "Fase 16 (2 Sílabas)", syllablesCount: 2, image: "imagens/fase16.png" },
-      { id: 17, title: "Fase 17 (2 Sílabas)", syllablesCount: 2, image: "imagens/fase17.png" },
-      { id: 18, title: "Fase 18 (2 Sílabas)", syllablesCount: 2, image: "imagens/fase18.png" },
-      { id: 19, title: "Fase 19 (3 Sílabas)", syllablesCount: 3, image: "imagens/fase19.png" }
-    ];
+  <!-- 4. TELA DO JOGO (ALUNO) -->
+  <div id="screen-game" class="screen">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <span class="badge" id="game-info-student">Aluno: -</span>
+      <span class="badge" style="background:#e67e22;" id="game-info-class">Turma: -</span>
+      <span class="badge" style="background:#27ae60;" id="game-info-phase">Fase 1</span>
+    </div>
 
-    // Carrega do LocalStorage ou usa o padrão
-    let dbPhaseBank = JSON.parse(localStorage.getItem('dbPhaseBank')) || defaultPhases;
+    <h2>Clique no campo e escolha a sílaba correta:</h2>
 
-    // Alternar entre abas
-    function switchTab(tabNumber) {
-      document.getElementById('admin-tab-create-phase').style.display = (tabNumber === 1) ? 'block' : 'none';
-      document.getElementById('admin-tab-assign-game').style.display = (tabNumber === 2) ? 'block' : 'none';
-      
-      document.getElementById('btn-tab-1').classList.toggle('active', tabNumber === 1);
-      document.getElementById('btn-tab-2').classList.toggle('active', tabNumber === 2);
+    <div class="game-layout">
+      <div class="words-column" id="game-words-column"></div>
+      <div class="sidebar-options">
+        <h3>Opções de Sílabas</h3>
+        <div class="options-grid" id="game-sidebar-options"></div>
+      </div>
+    </div>
 
-      if (tabNumber === 2) {
-        renderAvailablePhasesCheckboxes();
-      }
+    <button class="btn btn-success" id="btn-submit-phase" style="margin-top:20px;" onclick="submitPhase()">Finalizar e Enviar Pontuação 🏆</button>
+  </div>
+
+  <!-- 5. TELA DE FIM DE JOGO -->
+  <div id="screen-finish" class="screen" style="text-align: center;">
+    🎉
+    <h2>Parabéns! Você concluiu a atividade!</h2>
+    <p style="font-size: 20px; margin: 15px 0;">Sua pontuação final foi: <strong id="final-score" style="color:#2ecc71;">0</strong> acertos!</p>
+    <p>Seus resultados foram enviados ao professor com sucesso.</p>
+    <button class="btn" onclick="showScreen('screen-login')" style="margin-top:20px;">Voltar ao Início</button>
+  </div>
+
+</div>
+
+<script>
+  const DEFAULT_PHASES = [
+    {
+      id: "phase_1", title: "Fase 1 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "NEVE", syllables: ["NE", "VE"], options: ["SO", "TE"], img: "imagens/neve.png" },
+        { name: "CAMA", syllables: ["CA", "MA"], options: ["BO", "LO"], img: "imagens/cama.png" },
+        { name: "SOFA", syllables: ["SO", "FÁ"], options: ["MA", "PA"], img: "imagens/sofa.png" },
+        { name: "BOTA", syllables: ["BO", "TA"], options: ["NE", "TA"], img: "imagens/bota.png" }
+      ]
+    },
+    {
+      id: "phase_2", title: "Fase 2 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "REDE", syllables: ["RE", "DE"], options: ["RA", "DO"], img: "imagens/rede.png" },
+        { name: "DADO", syllables: ["DA", "DO"], options: ["DE", "DI"], img: "imagens/dado.png" },
+        { name: "FOCA", syllables: ["FO", "CA"], options: ["FI", "CE"], img: "imagens/foca.png" },
+        { name: "GATO", syllables: ["GA", "TO"], options: ["GE", "TU"], img: "imagens/gato.png" }
+      ]
+    },
+    {
+      id: "phase_3", title: "Fase 3 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "BOLO", syllables: ["BO", "LO"], options: ["BA", "LA"], img: "imagens/bolo.png" },
+        { name: "FACA", syllables: ["FA", "CA"], options: ["FO", "CE"], img: "imagens/faca.png" },
+        { name: "MOLA", syllables: ["MO", "LA"], options: ["MA", "LE"], img: "imagens/mola.png" },
+        { name: "PATO", syllables: ["PA", "TO"], options: ["PE", "TU"], img: "imagens/pato.png" }
+      ]
+    },
+    {
+      id: "phase_4", title: "Fase 4 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "RAIVA", syllables: ["RAI", "VA"], options: ["REI", "VE"], img: "imagens/raiva.png" },
+        { name: "JUDÔ", syllables: ["JU", "DÔ"], options: ["JO", "DA"], img: "imagens/judo.png" },
+        { name: "BOCA", syllables: ["BO", "CA"], options: ["BE", "LO"], img: "imagens/boca.png" },
+        { name: "ROBÔ", syllables: ["RO", "BÔ"], options: ["RA", "BO"], img: "imagens/robo.png" }
+      ]
+    },
+    {
+      id: "phase_5", title: "Fase 5 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "PEÃO", syllables: ["PE", "ÃO"], options: ["PA", "OA"], img: "imagens/peao.png" },
+        { name: "NOVE", syllables: ["NO", "VE"], options: ["LO", "TE"], img: "imagens/nove.png" },
+        { name: "FITA", syllables: ["FI", "TA"], options: ["FE", "TO"], img: "imagens/fita.png" },
+        { name: "MAÇÃ", syllables: ["MA", "ÇÃ"], options: ["MO", "ÇO"], img: "imagens/maca.png" }
+      ]
+    },
+    {
+      id: "phase_6", title: "Fase 6 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "JACA", syllables: ["JA", "CA"], options: ["JO", "CE"], img: "imagens/jaca.png" },
+        { name: "LUPA", syllables: ["LU", "PA"], options: ["LO", "PE"], img: "imagens/lupa.png" },
+        { name: "PATA", syllables: ["PA", "TA"], options: ["PO", "TI"], img: "imagens/pata.png" },
+        { name: "NAVE", syllables: ["NA", "VE"], options: ["MA", "CE"], img: "imagens/nave.png" }
+      ]
+    },
+    {
+      id: "phase_7", title: "Fase 7 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "PEIXE", syllables: ["PEI", "XE"], options: ["PI", "XA"], img: "imagens/peixe.png" },
+        { name: "FOTO", syllables: ["FO", "TO"], options: ["GO", "TE"], img: "imagens/foto.png" },
+        { name: "DOZE", syllables: ["DO", "ZE"], options: ["BO", "SE"], img: "imagens/doze.png" },
+        { name: "SINO", syllables: ["SI", "NO"], options: ["SE", "NE"], img: "imagens/sino.png" }
+      ]
+    },
+    {
+      id: "phase_8", title: "Fase 8 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "LIXO", syllables: ["LI", "XO"], options: ["LA", "CO"], img: "imagens/lixo.png" },
+        { name: "FOGO", syllables: ["FO", "GO"], options: ["FE", "DO"], img: "imagens/fogo.png" },
+        { name: "GOTA", syllables: ["GO", "TA"], options: ["GA", "TE"], img: "imagens/gota.png" },
+        { name: "REMO", syllables: ["RE", "MO"], options: ["RA", "DM"], img: "imagens/remo.png" }
+      ]
+    },
+    {
+      id: "phase_9", title: "Fase 9 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "FILA", syllables: ["FI", "LA"], options: ["FO", "LE"], img: "imagens/fila.png" },
+        { name: "VOVÔ", syllables: ["VO", "VÔ"], options: ["VA", "VÁ"], img: "imagens/vov.png" },
+        { name: "CASA", syllables: ["CA", "SA"], options: ["CE", "ZA"], img: "imagens/casa.png" },
+        { name: "PIPA", syllables: ["PI", "PA"], options: ["PA", "PE"], img: "imagens/pipa.png" }
+      ]
+    },
+    {
+      id: "phase_10", title: "Fase 10 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "VASO", syllables: ["VA", "SO"], options: ["VO", "SA"], img: "imagens/vaso.png" },
+        { name: "SACO", syllables: ["SA", "CO"], options: ["SE", "CA"], img: "imagens/saco.png" },
+        { name: "FADA", syllables: ["FA", "DA"], options: ["FO", "PE"], img: "imagens/fada.png" },
+        { name: "COLA", syllables: ["CO", "LA"], options: ["CA", "CE"], img: "imagens/cola.png" }
+      ]
+    },
+    {
+      id: "phase_11", title: "Fase 11 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "IOIO", syllables: ["IO", "IO"], options: ["OI", "IA"], img: "imagens/ioio.png" },
+        { name: "CASA", syllables: ["CA", "SA"], options: ["CE", "SE"], img: "imagens/casa.png" },
+        { name: "SETE", syllables: ["SE", "TE"], options: ["FE", "RE"], img: "imagens/sete.png" },
+        { name: "BEBÊ", syllables: ["BE", "BÊ"], options: ["BA", "BÁ"], img: "imagens/bebe.png" }
+      ]
+    },
+    {
+      id: "phase_12", title: "Fase 12 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "RODA", syllables: ["RO", "DA"], options: ["RE", "DO"], img: "imagens/roda.png" },
+        { name: "COCO", syllables: ["CO", "CO"], options: ["CA", "CE"], img: "imagens/coco.png" },
+        { name: "PERA", syllables: ["PE", "RA"], options: ["PA", "TE"], img: "imagens/pera.png" },
+        { name: "DEDO", syllables: ["DE", "DO"], options: ["DA", "DI"], img: "imagens/dedo.png" }
+      ]
+    },
+    {
+      id: "phase_13", title: "Fase 13 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "CAJU", syllables: ["CA", "JU"], options: ["CO", "JE"], img: "imagens/caju.png" },
+        { name: "PENA", syllables: ["PE", "NA"], options: ["PA", "NE"], img: "imagens/pena.png" },
+        { name: "MOTO", syllables: ["MO", "TO"], options: ["ME", "TA"], img: "imagens/moto.png" },
+        { name: "GELO", syllables: ["GE", "LO"], options: ["GI", "TI"], img: "imagens/gelo.png" }
+      ]
+    },
+    {
+      id: "phase_14", title: "Fase 14 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "MALA", syllables: ["MA", "LA"], options: ["MO", "LE"], img: "imagens/mala.png" },
+        { name: "SOPA", syllables: ["SO", "PA"], options: ["SE", "PO"], img: "imagens/sopa.png" },
+        { name: "GALO", syllables: ["GA", "LO"], options: ["GE", "SO"], img: "imagens/galo.png" },
+        { name: "LUVA", syllables: ["LU", "VA"], options: ["LA", "GA"], img: "imagens/luva.png" }
+      ]
+    },
+    {
+      id: "phase_15", title: "Fase 15 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "LEÃO", syllables: ["LE", "ÃO"], options: ["LO", "ÕE"], img: "imagens/leao.png" },
+        { name: "SAPO", syllables: ["SA", "PO"], options: ["SE", "PE"], img: "imagens/sapo.png" },
+        { name: "BOLA", syllables: ["BO", "LA"], options: ["BA", "LE"], img: "imagens/bola.png" },
+        { name: "VOVÓ", syllables: ["VO", "VÓ"], options: ["VU", "BA"], img: "imagens/vovo.png" }
+      ]
+    },
+    {
+      id: "phase_16", title: "Fase 16 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "SUCO", syllables: ["SU", "CO"], options: ["SO", "PE"], img: "imagens/suco.png" },
+        { name: "RALO", syllables: ["RA", "LO"], options: ["RI", "LE"], img: "imagens/ralo.png" },
+        { name: "TATU", syllables: ["TA", "TU"], options: ["MA", "TE"], img: "imagens/tatu.png" },
+        { name: "BALA", syllables: ["BA", "LA"], options: ["BO", "VE"], img: "imagens/bala.png" }
+      ]
+    },
+    {
+      id: "phase_17", title: "Fase 17 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "BONÉ", syllables: ["BO", "NÉ"], options: ["BA", "NÁ"], img: "imagens/bone.png" },
+        { name: "VACA", syllables: ["VA", "CA"], options: ["VI", "CE"], img: "imagens/vaca.png" },
+        { name: "COPO", syllables: ["CO", "PO"], options: ["CA", "TE"], img: "imagens/copo.png" },
+        { name: "MURO", syllables: ["MU", "RO"], options: ["MO", "RE"], img: "imagens/muro.png" }
+      ]
+    },
+    {
+      id: "phase_18", title: "Fase 18 (2 Sílabas)", syllablesCount: 2,
+      words: [
+        { name: "CAFÉ", syllables: ["CA", "FÉ"], options: ["CO", "FÁ"], img: "imagens/cafe.png" },
+        { name: "MESA", syllables: ["ME", "SA"], options: ["MA", "SE"], img: "imagens/mesa.png" },
+        { name: "RATO", syllables: ["RA", "TO"], options: ["RI", "TE"], img: "imagens/rato.png" },
+        { name: "SAIA", syllables: ["SA", "IA"], options: ["SO", "AI"], img: "imagens/saia.png" }
+      ]
+    }
+  ];
+
+  const DEFAULT_GAMES = {
+    "1AGO": { className: "1º Ano A", phases: DEFAULT_PHASES },
+    "INF5": { className: "Infantil V", phases: DEFAULT_PHASES },
+    "AGO1": { className: "1º Ano B", phases: DEFAULT_PHASES }
+  };
+
+  let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["Infantil V", "1º Ano A", "1º Ano B"];
+  let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phases")) || DEFAULT_PHASES; 
+  let dbGames = Object.assign({}, DEFAULT_GAMES, JSON.parse(localStorage.getItem("syllable_games")) || {}); 
+
+  let currentGame = null;
+  let currentPhaseIndex = 0;
+  let currentStudent = { name: "", pin: "", className: "" };
+  let selectedSlot = null;
+  let totalScore = 0;
+  let phaseFinished = false;
+
+  function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+  }
+
+  function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function startStudentGame() {
+    const rawPin = document.getElementById("player-pin").value.trim();
+    const name = document.getElementById("player-name").value.trim();
+
+    if (!rawPin || !name) {
+      alert("Por favor, digite o PIN do jogo e o seu Nome!");
+      return;
     }
 
-    // Marcar ou Desmarcar Todos
-    function toggleSelectAllPhases(master) {
-      const checkboxes = document.querySelectorAll("#available-phases-checkboxes input[type='checkbox']");
-      checkboxes.forEach(cb => {
-        cb.checked = master.checked;
+    const searchPin = String(rawPin).toUpperCase();
+    
+    if (!dbGames[searchPin]) {
+      alert("PIN não encontrado! Verifique se digitou corretamente.");
+      return;
+    }
+
+    const activeGame = dbGames[searchPin];
+    currentStudent = { name, pin: searchPin, className: activeGame.className };
+    currentGame = activeGame.phases && activeGame.phases.length > 0 ? activeGame.phases : DEFAULT_PHASES;
+    currentPhaseIndex = 0;
+    totalScore = 0;
+
+    document.getElementById("game-info-student").innerText = `Aluno: ${name}`;
+    document.getElementById("game-info-class").innerText = `Turma: ${currentStudent.className}`;
+    
+    loadPhase(currentPhaseIndex);
+    showScreen("screen-game");
+  }
+
+  function loadPhase(index) {
+    const phaseData = currentGame[index];
+    document.getElementById("game-info-phase").innerText = `Fase ${index + 1} de ${currentGame.length}`;
+    
+    const btnSubmit = document.getElementById("btn-submit-phase");
+    btnSubmit.innerText = currentPhaseIndex + 1 < currentGame.length ? "Concluir Fase e Ir para Próxima ➡️" : "Finalizar e Enviar Pontuação 🏆";
+    btnSubmit.onclick = submitPhase;
+
+    phaseFinished = false;
+    selectedSlot = null;
+
+    const wordsColumn = document.getElementById("game-words-column");
+    const sidebarOptions = document.getElementById("game-sidebar-options");
+    wordsColumn.innerHTML = "";
+    sidebarOptions.innerHTML = "";
+
+    let allPhaseSyllables = [];
+    phaseData.words.forEach(item => {
+      allPhaseSyllables.push(...item.syllables);
+      if (item.options) {
+        item.options.forEach(opt => {
+          if (opt) allPhaseSyllables.push(opt);
+        });
+      }
+    });
+
+    phaseData.words.forEach((item, wIndex) => {
+      const row = document.createElement("div");
+      row.className = "word-row";
+
+      const imgBox = document.createElement("div");
+      imgBox.className = "img-box";
+      const img = document.createElement("img");
+      img.src = item.img;
+      img.onerror = function() {
+        this.src = "https://cdn-icons-png.flaticon.com/512/2405/2405479.png";
+      };
+      imgBox.appendChild(img);
+      row.appendChild(imgBox);
+
+      const slotsContainer = document.createElement("div");
+      slotsContainer.className = "slots-container";
+      
+      item.syllables.forEach((_, sIndex) => {
+        const slot = document.createElement("div");
+        slot.className = "slot";
+        slot.dataset.word = wIndex;
+        slot.dataset.slot = sIndex;
+        slot.dataset.usedOptId = "";
+        slot.onclick = () => selectSlot(slot);
+        slotsContainer.appendChild(slot);
       });
-    }
+      row.appendChild(slotsContainer);
+      wordsColumn.appendChild(row);
+    });
 
-    // Renderizar a lista de Fases com Checkbox
-    function renderAvailablePhasesCheckboxes() {
-      const filter = document.getElementById("filter-phase-type").value;
-      const container = document.getElementById("available-phases-checkboxes");
-      const masterCheckbox = document.getElementById("select-all-phases-chk");
-      
-      container.innerHTML = "";
+    const shuffledSyllables = shuffleArray(allPhaseSyllables);
+    shuffledSyllables.forEach((syl, optIdx) => {
+      const opt = document.createElement("div");
+      const optId = `opt-phase-${optIdx}-${syl}`;
+      opt.className = "option";
+      opt.innerText = syl;
+      opt.id = optId;
+      opt.onclick = () => fillSlot(opt, syl, optId);
+      sidebarOptions.appendChild(opt);
+    });
+  }
 
-      let filteredPhases = dbPhaseBank;
-      if (filter === "2") {
-        filteredPhases = dbPhaseBank.filter(p => p.syllablesCount === 2);
-      } else if (filter === "3") {
-        filteredPhases = dbPhaseBank.filter(p => p.syllablesCount === 3);
+  function selectSlot(slot) {
+    if (phaseFinished) return;
+
+    if (slot.innerText !== "") {
+      const usedOptId = slot.dataset.usedOptId;
+      if (usedOptId) {
+        const optElem = document.getElementById(usedOptId);
+        if (optElem) optElem.classList.remove("hidden");
       }
 
-      if (filteredPhases.length === 0) {
-        container.innerHTML = "<p style='padding: 10px; color: #777;'>Nenhuma fase encontrada para este filtro.</p>";
-        if (masterCheckbox) masterCheckbox.checked = false;
+      slot.innerText = "";
+      slot.dataset.usedOptId = "";
+      slot.classList.remove("filled");
+    }
+
+    if (selectedSlot) selectedSlot.classList.remove("selected");
+    selectedSlot = slot;
+    selectedSlot.classList.add("selected");
+  }
+
+  function fillSlot(optionBtn, syllableText, optionId) {
+    if (phaseFinished) return;
+
+    if (!selectedSlot) {
+      alert("Clique primeiro em um campo em branco onde quer colocar a sílaba!");
+      return;
+    }
+
+    if (selectedSlot.dataset.usedOptId) {
+      const prevOpt = document.getElementById(selectedSlot.dataset.usedOptId);
+      if (prevOpt) prevOpt.classList.remove("hidden");
+    }
+
+    selectedSlot.innerText = syllableText;
+    selectedSlot.dataset.usedOptId = optionId;
+    selectedSlot.classList.remove("selected");
+    selectedSlot.classList.add("filled");
+
+    optionBtn.classList.add("hidden");
+    selectedSlot = null;
+  }
+
+  function submitPhase() {
+    if (phaseFinished) return;
+
+    const phaseData = currentGame[currentPhaseIndex];
+    let phaseScore = 0;
+    let allFilled = true;
+
+    const allSlots = document.querySelectorAll(".slot");
+    allSlots.forEach(s => {
+      if (s.innerText.trim() === "") allFilled = false;
+    });
+
+    if (!allFilled) {
+      if (!confirm("Você ainda tem campos em branco. Deseja finalizar mesmo assim?")) {
+        return;
+      }
+    }
+
+    phaseFinished = true;
+
+    phaseData.words.forEach((w, wIdx) => {
+      w.syllables.forEach((correctSyl, sIdx) => {
+        const slot = document.querySelector(`.slot[data-word='${wIdx}'][data-slot='${sIdx}']`);
+        if (slot) {
+          const userSyl = slot.innerText.trim();
+          if (userSyl === correctSyl) {
+            slot.classList.add("correct");
+            phaseScore += 1;
+          } else {
+            slot.classList.add("wrong");
+          }
+        }
+      });
+    });
+
+    totalScore += phaseScore;
+
+    setTimeout(() => {
+      if (currentPhaseIndex + 1 < currentGame.length) {
+        currentPhaseIndex++;
+        loadPhase(currentPhaseIndex);
+      } else {
+        finishGame();
+      }
+    }, 1500);
+  }
+
+  function finishGame() {
+    let currentRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
+    
+    currentRankings.push({
+      student: currentStudent.name,
+      className: currentStudent.className,
+      pin: currentStudent.pin,
+      score: totalScore,
+      date: new Date().toLocaleString("pt-BR")
+    });
+    
+    localStorage.setItem("syllable_rankings", JSON.stringify(currentRankings));
+
+    document.getElementById("final-score").innerText = totalScore;
+    showScreen("screen-finish");
+  }
+
+  function loginAdmin() {
+    const pass = document.getElementById("admin-pass").value;
+    if (pass === "admin" || pass === "1234") {
+      updateClassDropdown();
+      renderAdminForm();
+      showAdminTab('create-phase');
+      showScreen("screen-admin-panel");
+    } else {
+      alert("Senha incorreta!");
+    }
+  }
+
+  function showAdminTab(tabName) {
+    document.getElementById("admin-tab-create-phase").style.display = tabName === 'create-phase' ? 'block' : 'none';
+    document.getElementById("admin-tab-assign-game").style.display = tabName === 'assign-game' ? 'block' : 'none';
+    document.getElementById("admin-tab-manage").style.display = tabName === 'manage' ? 'block' : 'none';
+    document.getElementById("admin-tab-classes").style.display = tabName === 'classes' ? 'block' : 'none';
+    document.getElementById("admin-tab-ranking").style.display = tabName === 'ranking' ? 'block' : 'none';
+    
+    if (tabName === 'assign-game') renderAvailablePhasesCheckboxes();
+    if (tabName === 'manage') renderManageGamesAndPhases();
+    if (tabName === 'classes') renderClassesList();
+    if (tabName === 'ranking') renderRankingTable();
+  }
+
+  function updateClassDropdown() {
+    const select = document.getElementById("new-game-class");
+    select.innerHTML = "";
+    if (dbClasses.length === 0) {
+      select.innerHTML = '<option value="">Nenhuma turma cadastrada</option>';
+      return;
+    }
+    dbClasses.forEach(c => {
+      select.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+  }
+
+  function renderAdminForm() {
+    const typeSelect = document.getElementById("phase-type-select").value;
+    const container = document.getElementById("words-form-container");
+    container.innerHTML = "";
+
+    const exampleSyl = typeSelect === "3" ? "PI-PO-CA" : "SA-PO";
+    const exampleExtra = typeSelect === "3" ? "PA, CO" : "SO, TE";
+
+    for (let i = 0; i < 4; i++) {
+      const card = document.createElement("div");
+      card.className = "phase-card";
+      card.innerHTML = `
+        <h4>Palavra ${i + 1} (${typeSelect} Sílabas)</h4>
+        <div class="input-group">
+          <label>Caminho da Imagem no GitHub (Ex: imagens/palavra.png):</label>
+          <input type="text" class="admin-img-path" placeholder="imagens/exemplo.png">
+        </div>
+        <div class="input-group">
+          <label>Sílabas Corretas (separadas por hífen, ex: ${exampleSyl}):</label>
+          <input type="text" class="admin-correct-syl" placeholder="Ex: ${exampleSyl}">
+        </div>
+        <div class="input-group">
+          <label>Sílabas Incorretas/Extras (separadas por vírgula):</label>
+          <input type="text" class="admin-options-syl" placeholder="Ex: ${exampleExtra}">
+        </div>
+      `;
+      container.appendChild(card);
+    }
+  }
+
+  function saveNewPhaseToBank() {
+    const type = parseInt(document.getElementById("phase-type-select").value);
+    const titleInput = document.getElementById("phase-title-input").value.trim();
+    const title = titleInput || `Fase ${dbPhaseBank.length + 1} (${type} Sílabas)`;
+    
+    const imgInputs = document.querySelectorAll(".admin-img-path");
+    const correctInputs = document.querySelectorAll(".admin-correct-syl");
+    const optionInputs = document.querySelectorAll(".admin-options-syl");
+
+    const words = [];
+    for (let i = 0; i < 4; i++) {
+      const correctStr = correctInputs[i].value.trim().toUpperCase();
+      if (!correctStr) {
+        alert(`Por favor, preencha as sílabas corretas para a Palavra ${i + 1}`);
+        return;
+      }
+      const syllables = correctStr.split("-").map(s => s.trim());
+      
+      if (syllables.length !== type) {
+        alert(`A Palavra ${i + 1} deve conter exatamente ${type} sílabas separadas por hífen! Exemplo: ${type === 3 ? 'PI-PO-CA' : 'SA-PO'}`);
         return;
       }
 
-      const isMasterChecked = masterCheckbox ? masterCheckbox.checked : true;
+      const name = syllables.join("");
+      const optionsStr = optionInputs[i].value.trim().toUpperCase();
+      const options = optionsStr ? optionsStr.split(",").map(s => s.trim()) : [];
+      const img = imgInputs[i].value.trim() || "imagens/default.png";
 
-      filteredPhases.forEach(phase => {
-        const isChecked = isMasterChecked ? 'checked' : '';
-        
-        container.innerHTML += `
-          <label class="checkbox-item">
-            <input type="checkbox" value="${phase.id}" class="chk-phase" ${isChecked} onchange="updateMasterCheckboxState()"> 
-            <strong>${phase.title}</strong> 
-            <span class="type-tag">${phase.syllablesCount} Sílabas</span>
-          </label>
+      words.push({ name, syllables, options, img });
+    }
+
+    const newPhase = { id: `phase_${Date.now()}`, title, syllablesCount: type, words };
+    dbPhaseBank.push(newPhase);
+    localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
+    alert("Fase cadastrada no Banco de Dados com sucesso!");
+    document.getElementById("phase-title-input").value = "";
+    renderAdminForm();
+  }
+
+  function renderAvailablePhasesCheckboxes() {
+    const filter = document.getElementById("filter-phase-type").value;
+    const container = document.getElementById("available-phases-checkboxes");
+    container.innerHTML = "";
+
+    let filteredPhases = dbPhaseBank;
+    if (filter === "2") {
+      filteredPhases = dbPhaseBank.filter(p => !p.syllablesCount || p.syllablesCount === 2);
+    } else if (filter === "3") {
+      filteredPhases = dbPhaseBank.filter(p => p.syllablesCount === 3);
+    }
+
+    if (filteredPhases.length === 0) {
+      container.innerHTML = "<p style='padding: 10px; color: #777;'>Nenhuma fase encontrada para este filtro.</p>";
+      return;
+    }
+
+    filteredPhases.forEach(phase => {
+      const count = phase.syllablesCount || (phase.words && phase.words[0] ? phase.words[0].syllables.length : 2);
+      container.innerHTML += `
+        <label class="checkbox-item">
+          <input type="checkbox" value="${phase.id}" class="chk-phase" checked> 
+          <strong>${phase.title}</strong> 
+          <span class="type-tag">${count} Sílabas</span>
+        </label>
+      `;
+    });
+  }
+
+  function createGameWithSelectedPhases() {
+    const pin = document.getElementById("new-pin").value.trim().toUpperCase();
+    const className = document.getElementById("new-game-class").value;
+    const checkboxes = document.querySelectorAll("#available-phases-checkboxes input[type='checkbox']:checked");
+
+    if (!pin) {
+      alert("Digite um PIN para o jogo!");
+      return;
+    }
+    if (!className) {
+      alert("Selecione uma turma!");
+      return;
+    }
+    if (checkboxes.length === 0) {
+      alert("Selecione pelo menos uma fase!");
+      return;
+    }
+
+    const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+    const selectedPhases = dbPhaseBank.filter(p => selectedIds.includes(p.id));
+
+    dbGames[pin] = { className, phases: selectedPhases };
+    localStorage.setItem("syllable_games", JSON.stringify(dbGames));
+    alert(`Jogo cadastrado com sucesso! PIN: ${pin}`);
+    document.getElementById("new-pin").value = "";
+  }
+
+  function renderManageGamesAndPhases() {
+    const gamesList = document.getElementById("games-manage-list");
+    gamesList.innerHTML = "";
+    
+    const gamePins = Object.keys(dbGames);
+    if (gamePins.length === 0) {
+      gamesList.innerHTML = "<p>Nenhum jogo/PIN cadastrado no momento.</p>";
+    } else {
+      gamePins.forEach(pin => {
+        const g = dbGames[pin];
+        gamesList.innerHTML += `
+          <div class="class-list-item">
+            <div>
+              <strong>PIN: ${pin}</strong> - Turma: ${g.className} (${g.phases ? g.phases.length : 0} fases)
+            </div>
+            <button class="btn btn-danger btn-small" onclick="deleteGame('${pin}')">Excluir Jogo</button>
+          </div>
         `;
       });
     }
 
-    // Atualiza o estado da caixa "Selecionar Todos" caso o usuário marque/desmarque itens individualmente
-    function updateMasterCheckboxState() {
-      const masterCheckbox = document.getElementById("select-all-phases-chk");
-      const checkboxes = document.querySelectorAll("#available-phases-checkboxes input[type='checkbox']");
-      const checkedBoxes = document.querySelectorAll("#available-phases-checkboxes input[type='checkbox']:checked");
-      
-      if (masterCheckbox) {
-        masterCheckbox.checked = checkboxes.length > 0 && checkboxes.length === checkedBoxes.length;
-      }
+    const phasesList = document.getElementById("bank-phases-list");
+    phasesList.innerHTML = "";
+    if (dbPhaseBank.length === 0) {
+      phasesList.innerHTML = "<p>Nenhuma fase cadastrada no banco.</p>";
+    } else {
+      dbPhaseBank.forEach((phase, index) => {
+        const count = phase.syllablesCount || (phase.words && phase.words[0] ? phase.words[0].syllables.length : 2);
+        phasesList.innerHTML += `
+          <div class="class-list-item">
+            <div>
+              <strong>${phase.title}</strong> <span class="type-tag">${count} Sílabas</span> - Palavras: ${phase.words ? phase.words.map(w => w.name).join(", ") : ''}
+            </div>
+            <button class="btn btn-danger btn-small" onclick="deletePhaseFromBank(${index})">Excluir Fase</button>
+          </div>
+        `;
+      });
+    }
+  }
+
+  function deleteGame(pin) {
+    if (confirm(`Deseja remover o jogo do PIN ${pin}?`)) {
+      delete dbGames[pin];
+      localStorage.setItem("syllable_games", JSON.stringify(dbGames));
+      renderManageGamesAndPhases();
+    }
+  }
+
+  function deletePhaseFromBank(index) {
+    if (confirm("Deseja remover esta fase do Banco de Dados?")) {
+      dbPhaseBank.splice(index, 1);
+      localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
+      renderManageGamesAndPhases();
+    }
+  }
+
+  function loadAllDefaultPhases() {
+    if (confirm("Isso restaurará as 18 fases padrão no banco de fases. Deseja continuar?")) {
+      dbPhaseBank = [...DEFAULT_PHASES];
+      localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
+      renderManageGamesAndPhases();
+      alert("Fases padrão restauradas com sucesso!");
+    }
+  }
+
+  function resetAllData() {
+    if (confirm("ATENÇÃO: Isso apagará todas as fases, PINs, turmas e históricos de ranking cadastrados!")) {
+      localStorage.clear();
+      dbClasses = ["Infantil V", "1º Ano A", "1º Ano B"];
+      dbPhaseBank = DEFAULT_PHASES;
+      dbGames = Object.assign({}, DEFAULT_GAMES);
+      alert("Todos os dados foram resetados para o padrão!");
+      location.reload();
+    }
+  }
+
+  function addNewClass() {
+    const input = document.getElementById("class-name-input");
+    const val = input.value.trim();
+    if (!val) return;
+    if (!dbClasses.includes(val)) {
+      dbClasses.push(val);
+      localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
+      input.value = "";
+      renderClassesList();
+      updateClassDropdown();
+    }
+  }
+
+  function renderClassesList() {
+    const list = document.getElementById("classes-list");
+    list.innerHTML = "";
+    if (dbClasses.length === 0) {
+      list.innerHTML = "<p>Nenhuma turma cadastrada.</p>";
+      return;
+    }
+    dbClasses.forEach((c, idx) => {
+      list.innerHTML += `
+        <div class="class-list-item">
+          <span><strong>${c}</strong></span>
+          <button class="btn btn-danger btn-small" onclick="deleteClass(${idx})">Remover</button>
+        </div>
+      `;
+    });
+  }
+
+  function deleteClass(index) {
+    if (confirm(`Remover a turma "${dbClasses[index]}"?`)) {
+      dbClasses.splice(index, 1);
+      localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
+      renderClassesList();
+      updateClassDropdown();
+    }
+  }
+
+  function renderRankingTable() {
+    const select = document.getElementById("rank-filter-pin");
+    const currentSelected = select.value;
+    select.innerHTML = '<option value="ALL">Todos os PINs / Turmas</option>';
+    
+    Object.keys(dbGames).forEach(p => {
+      select.innerHTML += `<option value="${p}">${p} (${dbGames[p].className})</option>`;
+    });
+    select.value = currentSelected || "ALL";
+
+    const filterPin = select.value;
+    let rankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
+
+    if (filterPin !== "ALL") {
+      rankings = rankings.filter(r => r.pin === filterPin);
     }
 
-    // Salvar Nova Fase
-    function saveNewPhase() {
-      const title = document.getElementById("new-phase-title").value.trim();
-      const image = document.getElementById("new-phase-img").value.trim();
-      const syllablesCount = parseInt(document.getElementById("new-phase-syllables").value);
+    rankings.sort((a, b) => b.score - a.score);
 
-      if (!title || !image) {
-        alert("Preencha todos os campos para cadastrar a fase!");
-        return;
-      }
+    const tbody = document.getElementById("ranking-table-body");
+    tbody.innerHTML = "";
 
-      const newPhase = {
-        id: Date.now(),
-        title: title,
-        syllablesCount: syllablesCount,
-        image: image
-      };
-
-      dbPhaseBank.push(newPhase);
-      localStorage.setItem('dbPhaseBank', JSON.stringify(dbPhaseBank));
-
-      alert("Fase cadastrada com sucesso!");
-      document.getElementById("new-phase-title").value = "";
-      document.getElementById("new-phase-img").value = "";
-      
-      switchTab(2);
+    if (rankings.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6">Nenhum resultado registrado ainda.</td></tr>';
+      return;
     }
 
-    // Criar Jogo com as Fases Selecionadas
-    function createGameWithSelectedPhases() {
-      const pin = document.getElementById("new-pin").value.trim().toUpperCase();
-      const selectedTurma = document.getElementById("new-game-class").value;
-      const selectedBoxes = document.querySelectorAll("#available-phases-checkboxes input[type='checkbox']:checked");
-
-      if (!pin) {
-        alert("Informe o PIN do jogo!");
-        return;
-      }
-
-      if (selectedBoxes.length === 0) {
-        alert("Selecione pelo menos uma fase!");
-        return;
-      }
-
-      const selectedPhaseIds = Array.from(selectedBoxes).map(cb => parseInt(cb.value));
-
-      const gameConfig = {
-        pin: pin,
-        turma: selectedTurma,
-        phases: selectedPhaseIds
-      };
-
-      // Salva no LocalStorage
-      let activeGames = JSON.parse(localStorage.getItem('activeGames')) || {};
-      activeGames[pin] = gameConfig;
-      localStorage.setItem('activeGames', JSON.stringify(activeGames));
-
-      alert(`Jogo com PIN "${pin}" criado com sucesso com ${selectedPhaseIds.length} fase(s)!`);
-    }
-
-    // Inicialização ao carregar a página
-    window.onload = function() {
-      renderAvailablePhasesCheckboxes();
-    };
-  </script>
+    rankings.forEach((r, idx) => {
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>${idx + 1}º</strong></td>
+          <td>${r.student}</td>
+          <td>${r.className}</td>
+          <td>${r.pin}</td>
+          <td><strong>${r.score}</strong> pts</td>
+          <td>${r.date}</td>
+        </tr>
+      `;
+    });
+  }
+</script>
 </body>
 </html>
