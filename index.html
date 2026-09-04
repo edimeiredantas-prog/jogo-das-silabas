@@ -65,6 +65,7 @@
     .checkbox-list { display: flex; flex-direction: column; gap: 8px; background: #fff; padding: 10px; border: 1px solid #ccc; border-radius: 6px; max-height: 200px; overflow-y: auto; }
     .checkbox-item { display: flex; align-items: center; gap: 10px; font-size: 15px; cursor: pointer; }
     .checkbox-item input { width: 18px; height: 18px; cursor: pointer; }
+    .type-tag { font-size: 11px; padding: 2px 6px; border-radius: 3px; background: #95a5a6; color: white; font-weight: bold; margin-left: 5px; }
   </style>
 </head>
 <body>
@@ -113,10 +114,20 @@
     <!-- TAB 1: Cadastrar Nova Fase -->
     <div id="admin-tab-create-phase">
       <h3>1. Cadastrar Fase no Banco de Dados</h3>
+      
       <div class="input-group">
-        <label>Nome/Título da Fase (Ex: Fase 19 - Trissílabas):</label>
-        <input type="text" id="phase-title-input" placeholder="Digite um nome de identificação">
+        <label>Tipo de Fase (Quantidade de Sílabas):</label>
+        <select id="phase-type-select" onchange="renderAdminForm()">
+          <option value="2">Palavras de 2 Sílabas (Dissílabas)</option>
+          <option value="3">Palavras de 3 Sílabas (Trissílabas)</option>
+        </select>
       </div>
+
+      <div class="input-group">
+        <label>Nome/Título da Fase:</label>
+        <input type="text" id="phase-title-input" placeholder="Ex: Fase 19 - Trissílabas">
+      </div>
+
       <div id="words-form-container"></div>
       <button class="btn btn-success" onclick="saveNewPhaseToBank()">Salvar Fase no Banco</button>
     </div>
@@ -132,6 +143,16 @@
         <label>Selecione a Turma:</label>
         <select id="new-game-class"></select>
       </div>
+
+      <div class="input-group">
+        <label>Filtrar Fases Disponíveis por Tipo:</label>
+        <select id="filter-phase-type" onchange="renderAvailablePhasesCheckboxes()">
+          <option value="ALL">Todas as Fases (2 e 3 Sílabas)</option>
+          <option value="2">Apenas Fases de 2 Sílabas</option>
+          <option value="3">Apenas Fases de 3 Sílabas</option>
+        </select>
+      </div>
+
       <div class="input-group">
         <label>Marque as Fases que farão parte deste Jogo/PIN:</label>
         <div id="available-phases-checkboxes" class="checkbox-list"></div>
@@ -146,8 +167,8 @@
       <hr style="margin: 25px 0;">
       <h3>Banco de Fases Cadastradas</h3>
       <div id="bank-phases-list"></div>
-      <button class="btn btn-warning btn-small" style="margin-top:15px; margin-right:10px;" onclick="loadAllDefaultPhases()">🔄 Carregar/Restaurar Fases Padrão</button>
-      <button class="btn btn-danger btn-small" style="margin-top:15px;" onclick="resetAllData()">⚠️ Limpar Tudo e Resetar Dados</button>
+      <button class="btn btn-warning btn-small" style="margin-top:15px;" onclick="loadAllDefaultPhases()">🔄 Carregar/Restaurar Fases Padrão</button>
+      <button class="btn btn-danger btn-small" style="margin-top:15px; margin-left: 10px;" onclick="resetAllData()">⚠️ Limpar Tudo e Resetar Dados</button>
     </div>
 
     <!-- TAB 4: Cadastrar/Editar Turmas -->
@@ -222,7 +243,7 @@
 <script>
   const DEFAULT_PHASES = [
     {
-      id: "phase_1", title: "Fase 1",
+      id: "phase_1", title: "Fase 1 (2 Sílabas)", syllablesCount: 2,
       words: [
         { name: "NEVE", syllables: ["NE", "VE"], options: ["SO", "TE"], img: "imagens/neve.png" },
         { name: "CAMA", syllables: ["CA", "MA"], options: ["BO", "LO"], img: "imagens/cama.png" },
@@ -231,25 +252,7 @@
       ]
     },
     {
-      id: "phase_2", title: "Fase 2",
-      words: [
-        { name: "REDE", syllables: ["RE", "DE"], options: ["RA", "DO"], img: "imagens/rede.png" },
-        { name: "DADO", syllables: ["DA", "DO"], options: ["DE", "DI"], img: "imagens/dado.png" },
-        { name: "FOCA", syllables: ["FO", "CA"], options: ["FI", "CE"], img: "imagens/foca.png" },
-        { name: "GATO", syllables: ["GA", "TO"], options: ["GE", "TU"], img: "imagens/gato.png" }
-      ]
-    },
-    {
-      id: "phase_3", title: "Fase 3",
-      words: [
-        { name: "BOLO", syllables: ["BO", "LO"], options: ["BA", "LA"], img: "imagens/bolo.png" },
-        { name: "FACA", syllables: ["FA", "CA"], options: ["FO", "CE"], img: "imagens/faca.png" },
-        { name: "MOLA", syllables: ["MO", "LA"], options: ["MA", "LE"], img: "imagens/mola.png" },
-        { name: "PATO", syllables: ["PA", "TO"], options: ["PE", "TU"], img: "imagens/pato.png" }
-      ]
-    },
-    {
-      id: "phase_19", title: "Fase 19 - Trissílabas (3 Sílabas)",
+      id: "phase_19", title: "Fase 19 (3 Sílabas)", syllablesCount: 3,
       words: [
         { name: "PIPOCA", syllables: ["PI", "PO", "CA"], options: ["PA", "CO"], img: "imagens/pipoca.png" },
         { name: "MACACO", syllables: ["MA", "CA", "CO"], options: ["MO", "CE"], img: "imagens/macaco.png" },
@@ -259,15 +262,9 @@
     }
   ];
 
-  const DEFAULT_GAMES = {
-    "1AGO": { className: "1º Ano A", phases: DEFAULT_PHASES },
-    "INF5": { className: "Infantil V", phases: DEFAULT_PHASES },
-    "AGO1": { className: "1º Ano B", phases: DEFAULT_PHASES }
-  };
-
   let dbClasses = JSON.parse(localStorage.getItem("syllable_classes")) || ["Infantil V", "1º Ano A", "1º Ano B"];
   let dbPhaseBank = JSON.parse(localStorage.getItem("syllable_phases")) || DEFAULT_PHASES; 
-  let dbGames = Object.assign({}, DEFAULT_GAMES, JSON.parse(localStorage.getItem("syllable_games")) || {}); 
+  let dbGames = JSON.parse(localStorage.getItem("syllable_games")) || {}; 
 
   let currentGame = null;
   let currentPhaseIndex = 0;
@@ -302,13 +299,19 @@
     const searchPin = String(rawPin).toUpperCase();
     
     if (!dbGames[searchPin]) {
-      alert("PIN não encontrado! Verifique se digitou corretamente.");
+      alert("PIN não encontrado! Verifique com o professor.");
       return;
     }
 
     const activeGame = dbGames[searchPin];
     currentStudent = { name, pin: searchPin, className: activeGame.className };
-    currentGame = activeGame.phases && activeGame.phases.length > 0 ? activeGame.phases : DEFAULT_PHASES;
+    currentGame = activeGame.phases && activeGame.phases.length > 0 ? activeGame.phases : [];
+
+    if (currentGame.length === 0) {
+      alert("Este PIN não possui fases cadastradas!");
+      return;
+    }
+
     currentPhaseIndex = 0;
     totalScore = 0;
 
@@ -531,26 +534,29 @@
   }
 
   function renderAdminForm() {
+    const typeSelect = document.getElementById("phase-type-select").value;
     const container = document.getElementById("words-form-container");
     container.innerHTML = "";
-    const defaultImages = ["imagens/pipoca.png", "imagens/macaco.png", "imagens/caneta.png", "imagens/panela.png"];
+
+    const exampleSyl = typeSelect === "3" ? "PI-PO-CA" : "SA-PO";
+    const exampleExtra = typeSelect === "3" ? "PA, CO" : "SO, TE";
 
     for (let i = 0; i < 4; i++) {
       const card = document.createElement("div");
       card.className = "phase-card";
       card.innerHTML = `
-        <h4>Palavra ${i + 1}</h4>
+        <h4>Palavra ${i + 1} (${typeSelect} Sílabas)</h4>
         <div class="input-group">
-          <label>Caminho da Imagem no GitHub (Ex: imagens/pipoca.png):</label>
-          <input type="text" class="admin-img-path" value="${defaultImages[i]}" placeholder="Ex: imagens/pipoca.png">
+          <label>Caminho da Imagem no GitHub (Ex: imagens/palavra.png):</label>
+          <input type="text" class="admin-img-path" placeholder="imagens/exemplo.png">
         </div>
         <div class="input-group">
-          <label>Sílabas Corretas (separadas por hífen, ex: PI-PO-CA para 3 sílabas ou SA-PO para 2):</label>
-          <input type="text" class="admin-correct-syl" placeholder="Ex: PI-PO-CA">
+          <label>Sílabas Corretas (separadas por hífen, ex: ${exampleSyl}):</label>
+          <input type="text" class="admin-correct-syl" placeholder="Ex: ${exampleSyl}">
         </div>
         <div class="input-group">
-          <label>Sílabas Incorretas/Extras desta palavra (separadas por vírgula):</label>
-          <input type="text" class="admin-options-syl" placeholder="Ex: PA, CO">
+          <label>Sílabas Incorretas/Extras (separadas por vírgula):</label>
+          <input type="text" class="admin-options-syl" placeholder="Ex: ${exampleExtra}">
         </div>
       `;
       container.appendChild(card);
@@ -558,7 +564,10 @@
   }
 
   function saveNewPhaseToBank() {
-    const title = document.getElementById("phase-title-input").value.trim() || `Fase ${dbPhaseBank.length + 1}`;
+    const type = parseInt(document.getElementById("phase-type-select").value);
+    const titleInput = document.getElementById("phase-title-input").value.trim();
+    const title = titleInput || `Fase ${dbPhaseBank.length + 1} (${type} Sílabas)`;
+    
     const imgInputs = document.querySelectorAll(".admin-img-path");
     const correctInputs = document.querySelectorAll(".admin-correct-syl");
     const optionInputs = document.querySelectorAll(".admin-options-syl");
@@ -571,6 +580,12 @@
         return;
       }
       const syllables = correctStr.split("-").map(s => s.trim());
+      
+      if (syllables.length !== type) {
+        alert(`A Palavra ${i + 1} deve conter exatamente ${type} sílabas separadas por hífen! Exemplo: ${type === 3 ? 'PI-PO-CA' : 'SA-PO'}`);
+        return;
+      }
+
       const name = syllables.join("");
       const optionsStr = optionInputs[i].value.trim().toUpperCase();
       const options = optionsStr ? optionsStr.split(",").map(s => s.trim()) : [];
@@ -579,21 +594,38 @@
       words.push({ name, syllables, options, img });
     }
 
-    const newPhase = { id: `phase_${Date.now()}`, title, words };
+    const newPhase = { id: `phase_${Date.now()}`, title, syllablesCount: type, words };
     dbPhaseBank.push(newPhase);
     localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
-    alert("Fase salva com sucesso no Banco!");
+    alert("Fase cadastrada no Banco de Dados com sucesso!");
     document.getElementById("phase-title-input").value = "";
     renderAdminForm();
   }
 
   function renderAvailablePhasesCheckboxes() {
+    const filter = document.getElementById("filter-phase-type").value;
     const container = document.getElementById("available-phases-checkboxes");
     container.innerHTML = "";
-    dbPhaseBank.forEach(phase => {
+
+    let filteredPhases = dbPhaseBank;
+    if (filter === "2") {
+      filteredPhases = dbPhaseBank.filter(p => !p.syllablesCount || p.syllablesCount === 2);
+    } else if (filter === "3") {
+      filteredPhases = dbPhaseBank.filter(p => p.syllablesCount === 3);
+    }
+
+    if (filteredPhases.length === 0) {
+      container.innerHTML = "<p style='padding: 10px; color: #777;'>Nenhuma fase encontrada para este filtro.</p>";
+      return;
+    }
+
+    filteredPhases.forEach(phase => {
+      const count = phase.syllablesCount || 2;
       container.innerHTML += `
         <label class="checkbox-item">
-          <input type="checkbox" value="${phase.id}" checked> ${phase.title} (${phase.words.length} palavras)
+          <input type="checkbox" value="${phase.id}" checked> 
+          ${phase.title} 
+          <span class="type-tag">${count} Sílabas</span>
         </label>
       `;
     });
@@ -644,10 +676,11 @@
     const phasesList = document.getElementById("bank-phases-list");
     phasesList.innerHTML = "";
     dbPhaseBank.forEach(phase => {
+      const count = phase.syllablesCount || 2;
       phasesList.innerHTML += `
         <div class="class-list-item">
           <div>
-            <strong>${phase.title}</strong> - Palavras: ${phase.words.map(w => w.name).join(", ")}
+            <strong>${phase.title}</strong> <span class="type-tag">${count} Sílabas</span> - Palavras: ${phase.words.map(w => w.name).join(", ")}
           </div>
           <button class="btn btn-danger btn-small" onclick="deletePhase('${phase.id}')">Excluir Fase</button>
         </div>
@@ -741,8 +774,12 @@
   }
 
   function loadAllDefaultPhases() {
-    if (confirm("Isso irá restaurar o banco com as fases padrão. Deseja continuar?")) {
-      dbPhaseBank = DEFAULT_PHASES;
+    if (confirm("Isso irá restaurar as fases padrão de exemplo sem apagar as suas cadastradas. Deseja continuar?")) {
+      DEFAULT_PHASES.forEach(dp => {
+        if (!dbPhaseBank.some(p => p.id === dp.id)) {
+          dbPhaseBank.push(dp);
+        }
+      });
       localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
       renderManageGamesAndPhases();
     }
@@ -753,7 +790,7 @@
       localStorage.clear();
       dbClasses = ["Infantil V", "1º Ano A", "1º Ano B"];
       dbPhaseBank = DEFAULT_PHASES;
-      dbGames = Object.assign({}, DEFAULT_GAMES);
+      dbGames = {};
       alert("Dados resetados!");
       location.reload();
     }
