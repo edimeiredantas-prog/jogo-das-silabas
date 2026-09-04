@@ -76,7 +76,7 @@
     <h1>🎮 Jogo das Sílabas</h1>
     <div class="input-group">
       <label>PIN do Jogo:</label>
-      <input type="text" id="player-pin" placeholder="Ex: 1AGO, INF5 ou AGO1" style="text-transform: uppercase;">
+      <input type="text" id="player-pin" placeholder="Ex: 1AGO, INF5 ou TRI1" style="text-transform: uppercase;">
     </div>
     <div class="input-group">
       <label>Seu Nome (máximo 15 caracteres):</label>
@@ -114,7 +114,7 @@
     <div id="admin-tab-create-phase">
       <h3>1. Cadastrar Fase no Banco de Dados</h3>
       <div class="input-group">
-        <label>Nome/Título da Fase (Ex: Fase 19 - Animais):</label>
+        <label>Nome/Título da Fase (Ex: Fase 19 - Trissílabas):</label>
         <input type="text" id="phase-title-input" placeholder="Digite um nome de identificação">
       </div>
       <div id="words-form-container"></div>
@@ -125,8 +125,8 @@
     <div id="admin-tab-assign-game" style="display:none;">
       <h3>2. Criar Jogo (PIN) para uma Turma</h3>
       <div class="input-group">
-        <label>Defina o PIN do Jogo (ex: 1AGO, INF5):</label>
-        <input type="text" id="new-pin" placeholder="Ex: 1AGO" style="text-transform: uppercase;">
+        <label>Defina o PIN do Jogo (ex: 1AGO, INF5, TRI1):</label>
+        <input type="text" id="new-pin" placeholder="Ex: TRI1" style="text-transform: uppercase;">
       </div>
       <div class="input-group">
         <label>Selecione a Turma:</label>
@@ -249,138 +249,12 @@
       ]
     },
     {
-      id: "phase_4", title: "Fase 4",
+      id: "phase_19", title: "Fase 19 - Trissílabas (3 Sílabas)",
       words: [
-        { name: "RAIVA", syllables: ["RAI", "VA"], options: ["REI", "VE"], img: "imagens/raiva.png" },
-        { name: "JUDÔ", syllables: ["JU", "DÔ"], options: ["JO", "DA"], img: "imagens/judo.png" },
-        { name: "BOCA", syllables: ["BO", "CA"], options: ["BE", "LO"], img: "imagens/boca.png" },
-        { name: "ROBÔ", syllables: ["RO", "BÔ"], options: ["RA", "BO"], img: "imagens/robo.png" }
-      ]
-    },
-    {
-      id: "phase_5", title: "Fase 5",
-      words: [
-        { name: "PEÃO", syllables: ["PE", "ÃO"], options: ["PA", "OA"], img: "imagens/peao.png" },
-        { name: "NOVE", syllables: ["NO", "VE"], options: ["LO", "TE"], img: "imagens/nove.png" },
-        { name: "FITA", syllables: ["FI", "TA"], options: ["FE", "TO"], img: "imagens/fita.png" },
-        { name: "MAÇÃ", syllables: ["MA", "ÇÃ"], options: ["MO", "ÇO"], img: "imagens/maca.png" }
-      ]
-    },
-    {
-      id: "phase_6", title: "Fase 6",
-      words: [
-        { name: "JACA", syllables: ["JA", "CA"], options: ["JO", "CE"], img: "imagens/jaca.png" },
-        { name: "LUPA", syllables: ["LU", "PA"], options: ["LO", "PE"], img: "imagens/lupa.png" },
-        { name: "PATA", syllables: ["PA", "TA"], options: ["PO", "TI"], img: "imagens/pata.png" },
-        { name: "NAVE", syllables: ["NA", "VE"], options: ["MA", "CE"], img: "imagens/nave.png" }
-      ]
-    },
-    {
-      id: "phase_7", title: "Fase 7",
-      words: [
-        { name: "PEIXE", syllables: ["PEI", "XE"], options: ["PI", "XA"], img: "imagens/peixe.png" },
-        { name: "FOTO", syllables: ["FO", "TO"], options: ["GO", "TE"], img: "imagens/foto.png" },
-        { name: "DOZE", syllables: ["DO", "ZE"], options: ["BO", "SE"], img: "imagens/doze.png" },
-        { name: "SINO", syllables: ["SI", "NO"], options: ["SE", "NE"], img: "imagens/sino.png" }
-      ]
-    },
-    {
-      id: "phase_8", title: "Fase 8",
-      words: [
-        { name: "LIXO", syllables: ["LI", "XO"], options: ["LA", "CO"], img: "imagens/lixo.png" },
-        { name: "FOGO", syllables: ["FO", "GO"], options: ["FE", "DO"], img: "imagens/fogo.png" },
-        { name: "GOTA", syllables: ["GO", "TA"], options: ["GA", "TE"], img: "imagens/gota.png" },
-        { name: "REMO", syllables: ["RE", "MO"], options: ["RA", "MI"], img: "imagens/remo.png" }
-      ]
-    },
-    {
-      id: "phase_9", title: "Fase 9",
-      words: [
-        { name: "FILA", syllables: ["FI", "LA"], options: ["FO", "LE"], img: "imagens/fila.png" },
-        { name: "VOVÔ", syllables: ["VO", "VÔ"], options: ["VA", "VÁ"], img: "imagens/vov.png" },
-        { name: "CASA", syllables: ["CA", "SA"], options: ["CE", "ZA"], img: "imagens/casa.png" },
-        { name: "PIPA", syllables: ["PI", "PA"], options: ["PA", "PE"], img: "imagens/pipa.png" }
-      ]
-    },
-    {
-      id: "phase_10", title: "Fase 10",
-      words: [
-        { name: "VASO", syllables: ["VA", "SO"], options: ["VO", "SA"], img: "imagens/vaso.png" },
-        { name: "SACO", syllables: ["SA", "CO"], options: ["SE", "CA"], img: "imagens/saco.png" },
-        { name: "FADA", syllables: ["FA", "DA"], options: ["FO", "PE"], img: "imagens/fada.png" },
-        { name: "COLA", syllables: ["CO", "LA"], options: ["CA", "CE"], img: "imagens/cola.png" }
-      ]
-    },
-    {
-      id: "phase_11", title: "Fase 11",
-      words: [
-        { name: "IOIO", syllables: ["IO", "IO"], options: ["OI", "IA"], img: "imagens/ioio.png" },
-        { name: "CASA", syllables: ["CA", "SA"], options: ["CE", "SE"], img: "imagens/casa.png" },
-        { name: "SETE", syllables: ["SE", "TE"], options: ["FE", "RE"], img: "imagens/sete.png" },
-        { name: "BEBÊ", syllables: ["BE", "BÊ"], options: ["BA", "BÁ"], img: "imagens/bebe.png" }
-      ]
-    },
-    {
-      id: "phase_12", title: "Fase 12",
-      words: [
-        { name: "RODA", syllables: ["RO", "DA"], options: ["RE", "DO"], img: "imagens/roda.png" },
-        { name: "COCO", syllables: ["CO", "CO"], options: ["CA", "CE"], img: "imagens/coco.png" },
-        { name: "PERA", syllables: ["PE", "RA"], options: ["PA", "TE"], img: "imagens/pera.png" },
-        { name: "DEDO", syllables: ["DE", "DO"], options: ["DA", "DI"], img: "imagens/dedo.png" }
-      ]
-    },
-    {
-      id: "phase_13", title: "Fase 13",
-      words: [
-        { name: "CAJU", syllables: ["CA", "JU"], options: ["CO", "JE"], img: "imagens/caju.png" },
-        { name: "PENA", syllables: ["PE", "NA"], options: ["PA", "NE"], img: "imagens/pena.png" },
-        { name: "MOTO", syllables: ["MO", "TO"], options: ["ME", "TA"], img: "imagens/moto.png" },
-        { name: "GELO", syllables: ["GE", "LO"], options: ["GI", "TI"], img: "imagens/gelo.png" }
-      ]
-    },
-    {
-      id: "phase_14", title: "Fase 14",
-      words: [
-        { name: "MALA", syllables: ["MA", "LA"], options: ["MO", "LE"], img: "imagens/mala.png" },
-        { name: "SOPA", syllables: ["SO", "PA"], options: ["SE", "PO"], img: "imagens/sopa.png" },
-        { name: "GALO", syllables: ["GA", "LO"], options: ["GE", "SO"], img: "imagens/galo.png" },
-        { name: "LUVA", syllables: ["LU", "VA"], options: ["LA", "GA"], img: "imagens/luva.png" }
-      ]
-    },
-    {
-      id: "phase_15", title: "Fase 15",
-      words: [
-        { name: "LEÃO", syllables: ["LE", "ÃO"], options: ["LO", "ÕE"], img: "imagens/leao.png" },
-        { name: "SAPO", syllables: ["SA", "PO"], options: ["SE", "PE"], img: "imagens/sapo.png" },
-        { name: "BOLA", syllables: ["BO", "LA"], options: ["BA", "LE"], img: "imagens/bola.png" },
-        { name: "VOVÓ", syllables: ["VO", "VÓ"], options: ["VU", "BA"], img: "imagens/vovo.png" }
-      ]
-    },
-    {
-      id: "phase_16", title: "Fase 16",
-      words: [
-        { name: "SUCO", syllables: ["SU", "CO"], options: ["SO", "PE"], img: "imagens/suco.png" },
-        { name: "RALO", syllables: ["RA", "LO"], options: ["RI", "LE"], img: "imagens/ralo.png" },
-        { name: "TATU", syllables: ["TA", "TU"], options: ["MA", "TE"], img: "imagens/tatu.png" },
-        { name: "BALA", syllables: ["BA", "LA"], options: ["BO", "VE"], img: "imagens/bala.png" }
-      ]
-    },
-    {
-      id: "phase_17", title: "Fase 17",
-      words: [
-        { name: "BONÉ", syllables: ["BO", "NÉ"], options: ["BA", "NÁ"], img: "imagens/bone.png" },
-        { name: "VACA", syllables: ["VA", "CA"], options: ["VI", "CE"], img: "imagens/vaca.png" },
-        { name: "COPO", syllables: ["CO", "PO"], options: ["CA", "TE"], img: "imagens/copo.png" },
-        { name: "MURO", syllables: ["MU", "RO"], options: ["MO", "RE"], img: "imagens/muro.png" }
-      ]
-    },
-    {
-      id: "phase_18", title: "Fase 18",
-      words: [
-        { name: "CAFÉ", syllables: ["CA", "FÉ"], options: ["CO", "FÁ"], img: "imagens/cafe.png" },
-        { name: "MESA", syllables: ["ME", "SA"], options: ["MA", "SE"], img: "imagens/mesa.png" },
-        { name: "RATO", syllables: ["RA", "TO"], options: ["RI", "TE"], img: "imagens/rato.png" },
-        { name: "SAIA", syllables: ["SA", "IA"], options: ["SO", "AI"], img: "imagens/saia.png" }
+        { name: "PIPOCA", syllables: ["PI", "PO", "CA"], options: ["PA", "CO"], img: "imagens/pipoca.png" },
+        { name: "MACACO", syllables: ["MA", "CA", "CO"], options: ["MO", "CE"], img: "imagens/macaco.png" },
+        { name: "CANETA", syllables: ["CA", "NE", "TA"], options: ["CO", "TU"], img: "imagens/caneta.png" },
+        { name: "PANELA", syllables: ["PA", "NE", "LA"], options: ["PE", "LO"], img: "imagens/panela.png" }
       ]
     }
   ];
@@ -659,7 +533,7 @@
   function renderAdminForm() {
     const container = document.getElementById("words-form-container");
     container.innerHTML = "";
-    const defaultImages = ["imagens/copo.png", "imagens/mola.png", "imagens/cafe.png", "imagens/rato.png"];
+    const defaultImages = ["imagens/pipoca.png", "imagens/macaco.png", "imagens/caneta.png", "imagens/panela.png"];
 
     for (let i = 0; i < 4; i++) {
       const card = document.createElement("div");
@@ -667,16 +541,16 @@
       card.innerHTML = `
         <h4>Palavra ${i + 1}</h4>
         <div class="input-group">
-          <label>Caminho da Imagem no GitHub (Ex: imagens/bota.png):</label>
-          <input type="text" class="admin-img-path" value="${defaultImages[i]}" placeholder="Ex: imagens/bota.png">
+          <label>Caminho da Imagem no GitHub (Ex: imagens/pipoca.png):</label>
+          <input type="text" class="admin-img-path" value="${defaultImages[i]}" placeholder="Ex: imagens/pipoca.png">
         </div>
         <div class="input-group">
-          <label>Sílabas Corretas (separadas por hífen, ex: SA-PO):</label>
-          <input type="text" class="admin-correct-syl" placeholder="Ex: SA-PO">
+          <label>Sílabas Corretas (separadas por hífen, ex: PI-PO-CA para 3 sílabas ou SA-PO para 2):</label>
+          <input type="text" class="admin-correct-syl" placeholder="Ex: PI-PO-CA">
         </div>
         <div class="input-group">
           <label>Sílabas Incorretas/Extras desta palavra (separadas por vírgula):</label>
-          <input type="text" class="admin-options-syl" placeholder="Ex: PA, TA">
+          <input type="text" class="admin-options-syl" placeholder="Ex: PA, CO">
         </div>
       `;
       container.appendChild(card);
@@ -867,7 +741,7 @@
   }
 
   function loadAllDefaultPhases() {
-    if (confirm("Isso irá restaurar o banco com as 18 fases padrão. Deseja continuar?")) {
+    if (confirm("Isso irá restaurar o banco com as fases padrão. Deseja continuar?")) {
       dbPhaseBank = DEFAULT_PHASES;
       localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
       renderManageGamesAndPhases();
