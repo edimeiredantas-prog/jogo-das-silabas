@@ -154,7 +154,10 @@
       </div>
 
       <div class="input-group">
-        <label>Marque as Fases que farão parte deste Jogo/PIN:</label>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+          <label style="margin-bottom: 0;">Marque as Fases que farão parte deste Jogo/PIN:</label>
+          <button type="button" class="btn btn-secondary btn-small" onclick="toggleSelectAllPhases()">Selecionar / Desmarcar Todos</button>
+        </div>
         <div id="available-phases-checkboxes" class="checkbox-list"></div>
       </div>
       <button class="btn btn-success" onclick="createGameWithSelectedPhases()">Gerar Jogo para a Turma</button>
@@ -708,142 +711,167 @@
   }
 
   function saveNewPhaseToBank() {
-    const type = parseInt(document.getElementById("phase-type-select").value);
-    const titleInput = document.getElementById("phase-title-input").value.trim();
-    const title = titleInput || `Fase ${dbPhaseBank.length + 1} (${type} Sílabas)`;
-    
-    const imgInputs = document.querySelectorAll(".admin-img-path");
-    const correctInputs = document.querySelectorAll(".admin-correct-syl");
-    const optionInputs = document.querySelectorAll(".admin-options-syl");
+    const typeSelect = parseInt(document.getElementById("phase-type-select").value);
+    const title = document.getElementById("phase-title-input").value.trim();
 
-    const words = [];
-    for (let i = 0; i < 4; i++) {
-      const correctStr = correctInputs[i].value.trim().toUpperCase();
+    if (!title) {
+      alert("Por favor, preencha o Título da Fase!");
+      return;
+    }
+
+    const cards = document.querySelectorAll("#words-form-container .phase-card");
+    let wordsArr = [];
+
+    for (let i = 0; i < cards.length; i++) {
+      const imgPath = cards[i].querySelector(".admin-img-path").value.trim() || "https://cdn-icons-png.flaticon.com/512/2405/2405479.png";
+      const correctStr = cards[i].querySelector(".admin-correct-syl").value.trim();
+      const optionsStr = cards[i].querySelector(".admin-options-syl").value.trim();
+
       if (!correctStr) {
         alert(`Por favor, preencha as sílabas corretas para a Palavra ${i + 1}`);
         return;
       }
-      const syllables = correctStr.split("-").map(s => s.trim());
-      
-      if (syllables.length !== type) {
-        alert(`A Palavra ${i + 1} deve conter exatamente ${type} sílabas separadas por hífen! Exemplo: ${type === 3 ? 'PI-PO-CA' : 'SA-PO'}`);
+
+      const syllables = correctStr.split("-").map(s => s.trim().toUpperCase()).filter(s => s !== "");
+      if (syllables.length !== typeSelect) {
+        alert(`A Palavra ${i + 1} deve conter exatamente ${typeSelect} sílabas divididas por hífen!`);
         return;
       }
 
-      const name = syllables.join("");
-      const optionsStr = optionInputs[i].value.trim().toUpperCase();
-      const options = optionsStr ? optionsStr.split(",").map(s => s.trim()) : [];
-      const img = imgInputs[i].value.trim() || "imagens/default.png";
+      const options = optionsStr ? optionsStr.split(",").map(s => s.trim().toUpperCase()).filter(s => s !== "") : [];
+      const wordName = syllables.join("");
 
-      words.push({ name, syllables, options, img });
+      wordsArr.push({
+        name: wordName,
+        syllables: syllables,
+        options: options,
+        img: imgPath
+      });
     }
 
-    const newPhase = { id: `phase_${Date.now()}`, title, syllablesCount: type, words };
+    const newPhase = {
+      id: "phase_" + Date.now(),
+      title: title,
+      syllablesCount: typeSelect,
+      words: wordsArr
+    };
+
     dbPhaseBank.push(newPhase);
     localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
-    alert("Fase cadastrada no Banco de Dados com sucesso!");
+    alert("Fase cadastrada com sucesso no Banco de Fases!");
     document.getElementById("phase-title-input").value = "";
     renderAdminForm();
   }
 
   function renderAvailablePhasesCheckboxes() {
-    const filter = document.getElementById("filter-phase-type").value;
     const container = document.getElementById("available-phases-checkboxes");
+    const filter = document.getElementById("filter-phase-type").value;
     container.innerHTML = "";
 
-    let filteredPhases = dbPhaseBank;
-    if (filter === "2") {
-      filteredPhases = dbPhaseBank.filter(p => !p.syllablesCount || p.syllablesCount === 2);
-    } else if (filter === "3") {
-      filteredPhases = dbPhaseBank.filter(p => p.syllablesCount === 3);
-    }
-
-    if (filteredPhases.length === 0) {
-      container.innerHTML = "<p style='padding: 10px; color: #777;'>Nenhuma fase encontrada para este filtro.</p>";
+    if (dbPhaseBank.length === 0) {
+      container.innerHTML = "<p>Nenhuma fase cadastrada no banco.</p>";
       return;
     }
 
-    filteredPhases.forEach(phase => {
-      const count = phase.syllablesCount || (phase.words && phase.words[0] ? phase.words[0].syllables.length : 2);
-      container.innerHTML += `
-        <label class="checkbox-item">
-          <input type="checkbox" value="${phase.id}" class="chk-phase" checked> 
-          <strong>${phase.title}</strong> 
-          <span class="type-tag">${count} Sílabas</span>
-        </label>
-      `;
+    dbPhaseBank.forEach(p => {
+      const sylCount = p.syllablesCount || 2;
+      if (filter === "ALL" || filter === String(sylCount)) {
+        const item = document.createElement("label");
+        item.className = "checkbox-item";
+        item.innerHTML = `
+          <input type="checkbox" value="${p.id}" class="phase-checkbox">
+          <span>${p.title}</span>
+          <span class="type-tag">${sylCount} Sílabas</span>
+        `;
+        container.appendChild(item);
+      }
     });
+  }
+
+  function toggleSelectAllPhases() {
+    const checkboxes = document.querySelectorAll(".phase-checkbox");
+    if (checkboxes.length === 0) return;
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
   }
 
   function createGameWithSelectedPhases() {
     const pin = document.getElementById("new-pin").value.trim().toUpperCase();
     const className = document.getElementById("new-game-class").value;
-    const checkboxes = document.querySelectorAll("#available-phases-checkboxes input[type='checkbox']:checked");
 
     if (!pin) {
-      alert("Digite um PIN para o jogo!");
+      alert("Por favor, informe o PIN do jogo!");
       return;
     }
     if (!className) {
-      alert("Selecione uma turma!");
+      alert("Por favor, selecione uma turma!");
       return;
     }
+
+    const checkboxes = document.querySelectorAll(".phase-checkbox:checked");
     if (checkboxes.length === 0) {
-      alert("Selecione pelo menos uma fase!");
+      alert("Selecione pelo menos uma fase para compor este jogo!");
       return;
     }
 
     const selectedIds = Array.from(checkboxes).map(cb => cb.value);
     const selectedPhases = dbPhaseBank.filter(p => selectedIds.includes(p.id));
 
-    dbGames[pin] = { className, phases: selectedPhases };
+    dbGames[pin] = {
+      className: className,
+      phases: selectedPhases
+    };
+
     localStorage.setItem("syllable_games", JSON.stringify(dbGames));
-    alert(`Jogo cadastrado com sucesso! PIN: ${pin}`);
+    alert(`Jogo criado com sucesso!\nPIN: ${pin}\nTurma: ${className}\nFases: ${selectedPhases.length}`);
     document.getElementById("new-pin").value = "";
   }
 
   function renderManageGamesAndPhases() {
     const gamesList = document.getElementById("games-manage-list");
     gamesList.innerHTML = "";
-    
-    const gamePins = Object.keys(dbGames);
-    if (gamePins.length === 0) {
-      gamesList.innerHTML = "<p>Nenhum jogo/PIN cadastrado no momento.</p>";
+
+    const pinKeys = Object.keys(dbGames);
+    if (pinKeys.length === 0) {
+      gamesList.innerHTML = "<p>Nenhum jogo (PIN) cadastrado.</p>";
     } else {
-      gamePins.forEach(pin => {
-        const g = dbGames[pin];
-        gamesList.innerHTML += `
-          <div class="class-list-item">
-            <div>
-              <strong>PIN: ${pin}</strong> - Turma: ${g.className} (${g.phases ? g.phases.length : 0} fases)
-            </div>
-            <button class="btn btn-danger btn-small" onclick="deleteGame('${pin}')">Excluir Jogo</button>
+      pinKeys.forEach(pin => {
+        const game = dbGames[pin];
+        const count = game.phases ? game.phases.length : 0;
+        const div = document.createElement("div");
+        div.className = "class-list-item";
+        div.innerHTML = `
+          <div>
+            <strong>PIN: ${pin}</strong> - Turma: ${game.className} (${count} Fases)
           </div>
+          <button class="btn btn-danger btn-small" onclick="deleteGame('${pin}')">Excluir Jogo</button>
         `;
+        gamesList.appendChild(div);
       });
     }
 
-    const phasesList = document.getElementById("bank-phases-list");
-    phasesList.innerHTML = "";
+    const bankList = document.getElementById("bank-phases-list");
+    bankList.innerHTML = "";
+
     if (dbPhaseBank.length === 0) {
-      phasesList.innerHTML = "<p>Nenhuma fase cadastrada no banco.</p>";
+      bankList.innerHTML = "<p>Nenhuma fase no banco.</p>";
     } else {
-      dbPhaseBank.forEach((phase, index) => {
-        const count = phase.syllablesCount || (phase.words && phase.words[0] ? phase.words[0].syllables.length : 2);
-        phasesList.innerHTML += `
-          <div class="class-list-item">
-            <div>
-              <strong>${phase.title}</strong> <span class="type-tag">${count} Sílabas</span> - Palavras: ${phase.words ? phase.words.map(w => w.name).join(", ") : ''}
-            </div>
-            <button class="btn btn-danger btn-small" onclick="deletePhaseFromBank(${index})">Excluir Fase</button>
+      dbPhaseBank.forEach((p, index) => {
+        const div = document.createElement("div");
+        div.className = "class-list-item";
+        div.innerHTML = `
+          <div>
+            <strong>${p.title}</strong> - (${p.syllablesCount || 2} Sílabas)
           </div>
+          <button class="btn btn-danger btn-small" onclick="deletePhaseFromBank(${index})">Excluir do Banco</button>
         `;
+        bankList.appendChild(div);
       });
     }
   }
 
   function deleteGame(pin) {
-    if (confirm(`Deseja remover o jogo do PIN ${pin}?`)) {
+    if (confirm(`Tem certeza que deseja excluir o jogo com PIN ${pin}?`)) {
       delete dbGames[pin];
       localStorage.setItem("syllable_games", JSON.stringify(dbGames));
       renderManageGamesAndPhases();
@@ -851,7 +879,7 @@
   }
 
   function deletePhaseFromBank(index) {
-    if (confirm("Deseja remover esta fase do Banco de Dados?")) {
+    if (confirm("Tem certeza que deseja excluir esta fase do banco de dados?")) {
       dbPhaseBank.splice(index, 1);
       localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
       renderManageGamesAndPhases();
@@ -859,7 +887,7 @@
   }
 
   function loadAllDefaultPhases() {
-    if (confirm("Isso restaurará as 18 fases padrão no banco de fases. Deseja continuar?")) {
+    if (confirm("Deseja restaurar/carregar as 18 fases padrão para o Banco de Fases?")) {
       dbPhaseBank = [...DEFAULT_PHASES];
       localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
       renderManageGamesAndPhases();
@@ -868,48 +896,60 @@
   }
 
   function resetAllData() {
-    if (confirm("ATENÇÃO: Isso apagará todas as fases, PINs, turmas e históricos de ranking cadastrados!")) {
+    if (confirm("ATENÇÃO: Isto apagará todos os cadastros, PINs, rankings e restaurará o estado inicial. Continuar?")) {
       localStorage.clear();
       dbClasses = ["Infantil V", "1º Ano A", "1º Ano B"];
       dbPhaseBank = DEFAULT_PHASES;
       dbGames = Object.assign({}, DEFAULT_GAMES);
-      alert("Todos os dados foram resetados para o padrão!");
-      location.reload();
-    }
-  }
-
-  function addNewClass() {
-    const input = document.getElementById("class-name-input");
-    const val = input.value.trim();
-    if (!val) return;
-    if (!dbClasses.includes(val)) {
-      dbClasses.push(val);
       localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
-      input.value = "";
-      renderClassesList();
+      localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
+      localStorage.setItem("syllable_games", JSON.stringify(dbGames));
       updateClassDropdown();
+      renderManageGamesAndPhases();
+      alert("Todos os dados foram resetados com sucesso.");
     }
   }
 
   function renderClassesList() {
     const list = document.getElementById("classes-list");
     list.innerHTML = "";
+
     if (dbClasses.length === 0) {
       list.innerHTML = "<p>Nenhuma turma cadastrada.</p>";
       return;
     }
-    dbClasses.forEach((c, idx) => {
-      list.innerHTML += `
-        <div class="class-list-item">
-          <span><strong>${c}</strong></span>
-          <button class="btn btn-danger btn-small" onclick="deleteClass(${idx})">Remover</button>
-        </div>
+
+    dbClasses.forEach((c, index) => {
+      const div = document.createElement("div");
+      div.className = "class-list-item";
+      div.innerHTML = `
+        <span>${c}</span>
+        <button class="btn btn-danger btn-small" onclick="deleteClass(${index})">Excluir</button>
       `;
+      list.appendChild(div);
     });
   }
 
+  function addNewClass() {
+    const name = document.getElementById("class-name-input").value.trim();
+    if (!name) {
+      alert("Digite o nome da turma!");
+      return;
+    }
+    if (dbClasses.includes(name)) {
+      alert("Esta turma já está cadastrada!");
+      return;
+    }
+
+    dbClasses.push(name);
+    localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
+    document.getElementById("class-name-input").value = "";
+    renderClassesList();
+    updateClassDropdown();
+  }
+
   function deleteClass(index) {
-    if (confirm(`Remover a turma "${dbClasses[index]}"?`)) {
+    if (confirm("Tem certeza que deseja excluir esta turma?")) {
       dbClasses.splice(index, 1);
       localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
       renderClassesList();
@@ -918,45 +958,46 @@
   }
 
   function renderRankingTable() {
-    const select = document.getElementById("rank-filter-pin");
-    const currentSelected = select.value;
-    select.innerHTML = '<option value="ALL">Todos os PINs / Turmas</option>';
+    const filterSelect = document.getElementById("rank-filter-pin");
+    const pinKeys = Object.keys(dbGames);
     
-    Object.keys(dbGames).forEach(p => {
-      select.innerHTML += `<option value="${p}">${p} (${dbGames[p].className})</option>`;
+    let optionsHtml = '<option value="ALL">Todos os PINs</option>';
+    pinKeys.forEach(p => {
+      optionsHtml += `<option value="${p}">${p} (${dbGames[p].className})</option>`;
     });
-    select.value = currentSelected || "ALL";
+    filterSelect.innerHTML = optionsHtml;
 
-    const filterPin = select.value;
-    let rankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
+    const selectedFilter = filterSelect.value || "ALL";
+    const rankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
+    const tableBody = document.getElementById("ranking-table-body");
+    tableBody.innerHTML = "";
 
-    if (filterPin !== "ALL") {
-      rankings = rankings.filter(r => r.pin === filterPin);
+    let filteredRankings = rankings;
+    if (selectedFilter !== "ALL") {
+      filteredRankings = rankings.filter(r => r.pin === selectedFilter);
     }
 
-    rankings.sort((a, b) => b.score - a.score);
+    filteredRankings.sort((a, b) => b.score - a.score);
 
-    const tbody = document.getElementById("ranking-table-body");
-    tbody.innerHTML = "";
-
-    if (rankings.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6">Nenhum resultado registrado ainda.</td></tr>';
+    if (filteredRankings.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="6">Nenhum resultado registrado ainda.</td></tr>';
       return;
     }
 
-    rankings.forEach((r, idx) => {
-      tbody.innerHTML += `
-        <tr>
-          <td><strong>${idx + 1}º</strong></td>
-          <td>${r.student}</td>
-          <td>${r.className}</td>
-          <td>${r.pin}</td>
-          <td><strong>${r.score}</strong> pts</td>
-          <td>${r.date}</td>
-        </tr>
+    filteredRankings.forEach((r, idx) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>#${idx + 1}</strong></td>
+        <td>${r.student}</td>
+        <td>${r.className || "-"}</td>
+        <td><span class="badge" style="background:#8e44ad;">${r.pin}</span></td>
+        <td><strong>${r.score}</strong> acertos</td>
+        <td>${r.date}</td>
       `;
+      tableBody.appendChild(tr);
     });
   }
 </script>
+
 </body>
 </html>
