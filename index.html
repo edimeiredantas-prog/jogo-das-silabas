@@ -2,52 +2,106 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Painel do Professor - Criar Jogo</title>
-  <!-- Biblioteca Oficial do Supabase -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogo das Sílabas</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; text-align: center; background-color: #f4f7f6; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    h1, h2 { color: #333; }
+    input, textarea, button { width: 90%; padding: 10px; margin: 10px 0; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
+    button { background-color: #2e7d32; color: white; border: none; cursor: pointer; font-weight: bold; }
+    button:hover { background-color: #1b5e20; }
+    .btn-aluno { background-color: #1565c0; }
+    .btn-aluno:hover { background-color: #0d47a1; }
+    #areaJogo { margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px; display: none; }
+  </style>
+
+  <!-- Biblioteca do Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-  <h1>Painel do Professor</h1>
+  <!-- Conexão com o Supabase -->
+  <script>
+    const SUPABASE_URL = 'https://vvhgaryqqhuvsbodpzmq.supabase.co';
+    const SUPABASE_ANON_KEY = 'SUA_CHAVE_PUBLISHABLE_AQUI'; // Insira sua chave anon aqui
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
 
-  <label for="pinInput">PIN do Jogo:</label>
-  <input type="text" id="pinInput" placeholder="Ex: SET">
+  <h1>🎮 Jogo das Sílabas</h1>
 
-  <br><br>
+  <!-- PAINEL DO PROFESSOR -->
+  <div class="card">
+    <h2>👩‍🏫 Painel do Professor</h2>
+    <input type="text" id="pinProfessor" placeholder="Crie um PIN (ex: SILABAS1)">
+    <textarea id="dadosJogo" rows="3" placeholder="Insira as palavras ou fases (separadas por vírgula)"></textarea>
+    <button onclick="salvarJogo()">Criar / Salvar Jogo</button>
+  </div>
 
-  <label for="fasesInput">Dados do Jogo / Fases (JSON ou Texto):</label>
-  <textarea id="fasesInput" placeholder='{"fases": ["sílaba1", "sílaba2"]}'></textarea>
+  <!-- ÁREA DO ALUNO -->
+  <div class="card">
+    <h2>👶 Área do Aluno</h2>
+    <input type="text" id="pinAluno" placeholder="Digite o PIN do jogo">
+    <button class="btn-aluno" onclick="buscarJogo()">Entrar no Jogo</button>
+  </div>
 
-  <br><br>
-
-  <button onclick="salvarJogoNoSupabase()">Criar / Salvar Jogo</button>
+  <!-- TELA DA ATIVIDADE -->
+  <div id="areaJogo">
+    <h2 id="tituloJogo"></h2>
+    <p id="conteudoJogo"></p>
+  </div>
 
   <script>
-    // Configurações do Supabase
-    const SUPABASE_URL = 'https://vvhgaryqqhuvsbodpzmq.supabase.co';
-    const SUPABASE_ANON_KEY = 'SUA_CHAVE_PUBLISHABLE_AQUI'; // Cole sua chave Publishable/Anon aqui
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Função para o Professor criar e salvar a atividade na nuvem
+    async function salvarJogo() {
+      const pin = document.getElementById('pinProfessor').value.trim().toUpperCase();
+      const dados = document.getElementById('dadosJogo').value.trim();
 
-    async function salvarJogoNoSupabase() {
-      const pinDigitado = document.getElementById('pinInput').value.trim();
-      const conteudoJogo = document.getElementById('fasesInput').value;
-
-      if (!pinDigitado) {
-        alert("Por favor, digite um PIN válido!");
+      if (!pin || !dados) {
+        alert("Preencha o PIN e o conteúdo do jogo!");
         return;
       }
 
-      // Envia os dados diretamente para a tabela no Supabase
-      const { data, error } = await _supabase
+      const { error } = await _supabase
         .from('jogos')
-        .insert([{ pin: pinDigitado, dados: conteudoJogo }]);
+        .insert([{ pin: pin, dados: { conteudo: dados } }]);
 
       if (error) {
-        alert("Erro ao salvar o jogo na nuvem: " + error.message);
-        console.error(error);
+        alert("Erro ao salvar o jogo: " + error.message);
       } else {
-        alert("Jogo salvo com sucesso! O PIN '" + pinDigitado + "' já pode ser usado pelos alunos.");
+        alert("Jogo salvo! Os alunos já podem usar o PIN: " + pin);
+        document.getElementById('pinProfessor').value = '';
+        document.getElementById('dadosJogo').value = '';
       }
+    }
+
+    // Função para o Aluno buscar a atividade pelo PIN
+    async function buscarJogo() {
+      const pin = document.getElementById('pinAluno').value.trim().toUpperCase();
+
+      if (!pin) {
+        alert("Digite o PIN do jogo!");
+        return;
+      }
+
+      const { data, error } = await _supabase
+        .from('jogos')
+        .select('dados')
+        .eq('pin', pin)
+        .single();
+
+      if (error || !data) {
+        alert("PIN não encontrado! Verifique o código digitado.");
+      } else {
+        iniciarJogo(pin, data.dados);
+      }
+    }
+
+    // Inicia a partida para o aluno
+    function iniciarJogo(pin, dados) {
+      document.getElementById('areaJogo').style.display = 'block';
+      document.getElementById('tituloJogo').innerText = "Jogo Carregado! (PIN: " + pin + ")";
+      document.getElementById('conteudoJogo').innerText = "Conteúdo: " + JSON.stringify(dados.conteudo);
     }
   </script>
 
