@@ -67,6 +67,9 @@
     .checkbox-item input { width: 18px; height: 18px; cursor: pointer; }
     .type-tag { font-size: 11px; padding: 2px 6px; border-radius: 3px; background: #95a5a6; color: white; font-weight: bold; margin-left: 5px; }
   </style>
+
+  <!-- Biblioteca Oficial do Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -244,6 +247,12 @@
 </div>
 
 <script>
+  // CONFIGURAÇÃO DO SUPABASE
+  const SUPABASE_URL = 'https://vvhgaryqqhuvsbodpzmq.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_GtMSaV2ddUbbWEMpAvrk4Q_FVT9VXFQ';
+  const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // FASES PADRÃO (18 FASES DE 2 SÍLABAS)
   const DEFAULT_PHASES = [
     {
       id: "phase_1", title: "Fase 1 (2 Sílabas)", syllablesCount: 2,
@@ -440,7 +449,7 @@
     return arr;
   }
 
-  function startStudentGame() {
+  async function startStudentGame() {
     const rawPin = document.getElementById("player-pin").value.trim();
     const name = document.getElementById("player-name").value.trim();
 
@@ -450,14 +459,31 @@
     }
 
     const searchPin = String(rawPin).toUpperCase();
-    
-    if (!dbGames[searchPin]) {
+    let activeGame = dbGames[searchPin];
+
+    // Busca no Supabase caso não esteja local
+    if (!activeGame) {
+      try {
+        const { data, error } = await _supabase
+          .from('jogos')
+          .select('dados')
+          .eq('pin', searchPin)
+          .single();
+
+        if (data && data.dados) {
+          activeGame = data.dados;
+        }
+      } catch (err) {
+        console.log("Busca offline/local.");
+      }
+    }
+
+    if (!activeGame) {
       alert("PIN não encontrado! Verifique se digitou corretamente.");
       return;
     }
 
-    const activeGame = dbGames[searchPin];
-    currentStudent = { name, pin: searchPin, className: activeGame.className };
+    currentStudent = { name, pin: searchPin, className: activeGame.className || 'Turma Geral' };
     currentGame = activeGame.phases && activeGame.phases.length > 0 ? activeGame.phases : DEFAULT_PHASES;
     currentPhaseIndex = 0;
     totalScore = 0;
@@ -626,18 +652,26 @@
     }, 1500);
   }
 
-  function finishGame() {
-    let currentRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
-    
-    currentRankings.push({
+  async function finishGame() {
+    const rankingEntry = {
       student: currentStudent.name,
       className: currentStudent.className,
       pin: currentStudent.pin,
       score: totalScore,
       date: new Date().toLocaleString("pt-BR")
-    });
-    
+    };
+
+    // Salva localmente
+    let currentRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
+    currentRankings.push(rankingEntry);
     localStorage.setItem("syllable_rankings", JSON.stringify(currentRankings));
+
+    // Envia ao Supabase
+    try {
+      await _supabase.from('rankings').insert([rankingEntry]);
+    } catch (e) {
+      console.log("Erro de envio de ranking para nuvem.");
+    }
 
     document.getElementById("final-score").innerText = totalScore;
     showScreen("screen-finish");
@@ -686,7 +720,6 @@
     container.innerHTML = "";
 
     const exampleSyl = typeSelect === "3" ? "PI-PO-CA" : "SA-PO";
-    const exampleExtra = typeSelect === "3" ? "PA, CO" : "SO, TE";
 
     for (let i = 0; i < 4; i++) {
       const card = document.createElement("div");
@@ -702,63 +735,53 @@
           <input type="text" class="admin-correct-syl" placeholder="Ex: ${exampleSyl}">
         </div>
         <div class="input-group">
-          <label>Sílabas Incorretas/Extras (separadas por vírgula):</label>
-          <input type="text" class="admin-options-syl" placeholder="Ex: ${exampleExtra}">
+          <label>Sílabas Incorretas/Distratores (separadas por vírgula):</label>
+          <input type="text" class="admin-wrong-syl" placeholder="Ex: TE, FA">
         </div>
       `;
       container.appendChild(card);
     }
   }
 
-  function saveNewPhaseToBank() {
-    const typeSelect = parseInt(document.getElementById("phase-type-select").value);
+  async function saveNewPhaseToBank() {
     const title = document.getElementById("phase-title-input").value.trim();
-
+    const sylCount = parseInt(document.getElementById("phase-type-select").value);
+    
     if (!title) {
-      alert("Por favor, preencha o Título da Fase!");
+      alert("Preencha o título da fase!");
       return;
     }
 
-    const cards = document.querySelectorAll("#words-form-container .phase-card");
-    let wordsArr = [];
+    const cards = document.querySelectorAll(".phase-card");
+    const words = [];
 
-    for (let i = 0; i < cards.length; i++) {
-      const imgPath = cards[i].querySelector(".admin-img-path").value.trim() || "https://cdn-icons-png.flaticon.com/512/2405/2405479.png";
-      const correctStr = cards[i].querySelector(".admin-correct-syl").value.trim();
-      const optionsStr = cards[i].querySelector(".admin-options-syl").value.trim();
+    for (let card of cards) {
+      const img = card.querySelector(".admin-img-path").value.trim();
+      const correctRaw = card.querySelector(".admin-correct-syl").value.trim();
+      const wrongRaw = card.querySelector(".admin-wrong-syl").value.trim();
 
-      if (!correctStr) {
-        alert(`Por favor, preencha as sílabas corretas para a Palavra ${i + 1}`);
+      const syllables = correctRaw.split("-").map(s => s.trim().toUpperCase()).filter(s => s !== "");
+      const options = wrongRaw.split(",").map(s => s.trim().toUpperCase()).filter(s => s !== "");
+
+      if (syllables.length !== sylCount) {
+        alert(`Cada palavra deve ter exatamente ${sylCount} sílabas separadas por hífen!`);
         return;
       }
 
-      const syllables = correctStr.split("-").map(s => s.trim().toUpperCase()).filter(s => s !== "");
-      if (syllables.length !== typeSelect) {
-        alert(`A Palavra ${i + 1} deve conter exatamente ${typeSelect} sílabas divididas por hífen!`);
-        return;
-      }
-
-      const options = optionsStr ? optionsStr.split(",").map(s => s.trim().toUpperCase()).filter(s => s !== "") : [];
-      const wordName = syllables.join("");
-
-      wordsArr.push({
-        name: wordName,
-        syllables: syllables,
-        options: options,
-        img: imgPath
-      });
+      words.push({ name: syllables.join(""), syllables, options, img });
     }
 
     const newPhase = {
       id: "phase_" + Date.now(),
-      title: title,
-      syllablesCount: typeSelect,
-      words: wordsArr
+      title,
+      syllablesCount: sylCount,
+      words
     };
 
     dbPhaseBank.push(newPhase);
     localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
-    alert("Fase cadastrada com sucesso no Banco de Fases!");
+    
+    alert("Fase salva no banco de dados com sucesso!");
     document.getElementById("phase-title-input").value = "";
     renderAdminForm();
   }
@@ -768,62 +791,65 @@
     const filter = document.getElementById("filter-phase-type").value;
     container.innerHTML = "";
 
-    if (dbPhaseBank.length === 0) {
-      container.innerHTML = "<p>Nenhuma fase cadastrada no banco.</p>";
-      return;
-    }
-
     dbPhaseBank.forEach(p => {
-      const sylCount = p.syllablesCount || 2;
-      if (filter === "ALL" || filter === String(sylCount)) {
-        const item = document.createElement("label");
-        item.className = "checkbox-item";
-        item.innerHTML = `
-          <input type="checkbox" value="${p.id}" class="phase-checkbox">
-          <span>${p.title}</span>
-          <span class="type-tag">${sylCount} Sílabas</span>
-        `;
-        container.appendChild(item);
-      }
+      if (filter !== "ALL" && p.syllablesCount.toString() !== filter) return;
+
+      const item = document.createElement("label");
+      item.className = "checkbox-item";
+      item.innerHTML = `
+        <input type="checkbox" value="${p.id}" class="phase-checkbox">
+        <span>${p.title}</span>
+        <span class="type-tag">${p.syllablesCount} Sílabas</span>
+      `;
+      container.appendChild(item);
     });
   }
 
   function toggleSelectAllPhases() {
     const checkboxes = document.querySelectorAll(".phase-checkbox");
     if (checkboxes.length === 0) return;
-    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-    checkboxes.forEach(cb => cb.checked = !allChecked);
+    const allChecked = Array.from(checkboxes).every(c => c.checked);
+    checkboxes.forEach(c => c.checked = !allChecked);
   }
 
-  function createGameWithSelectedPhases() {
+  async function createGameWithSelectedPhases() {
     const pin = document.getElementById("new-pin").value.trim().toUpperCase();
     const className = document.getElementById("new-game-class").value;
 
     if (!pin) {
-      alert("Por favor, informe o PIN do jogo!");
-      return;
-    }
-    if (!className) {
-      alert("Por favor, selecione uma turma!");
+      alert("Digite um PIN válido para o jogo!");
       return;
     }
 
     const checkboxes = document.querySelectorAll(".phase-checkbox:checked");
     if (checkboxes.length === 0) {
-      alert("Selecione pelo menos uma fase para compor este jogo!");
+      alert("Selecione pelo menos uma fase para o jogo!");
       return;
     }
 
-    const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+    const selectedIds = Array.from(checkboxes).map(c => c.value);
     const selectedPhases = dbPhaseBank.filter(p => selectedIds.includes(p.id));
 
-    dbGames[pin] = {
-      className: className,
-      phases: selectedPhases
-    };
+    const gameData = { className, phases: selectedPhases };
 
+    // Salva Localmente
+    dbGames[pin] = gameData;
     localStorage.setItem("syllable_games", JSON.stringify(dbGames));
-    alert(`Jogo criado com sucesso!\nPIN: ${pin}\nTurma: ${className}\nFases: ${selectedPhases.length}`);
+
+    // Salva no Supabase na Nuvem
+    try {
+      const { error } = await _supabase
+        .from('jogos')
+        .insert([{ pin: pin, dados: gameData }]);
+
+      if (error) {
+        console.log("Erro no Supabase, salvo localmente:", error.message);
+      }
+    } catch (e) {
+      console.log("Serviço offline, salvo localmente.");
+    }
+
+    alert(`Jogo criado com sucesso com o PIN: ${pin}!`);
     document.getElementById("new-pin").value = "";
   }
 
@@ -831,170 +857,135 @@
     const gamesList = document.getElementById("games-manage-list");
     gamesList.innerHTML = "";
 
-    const pinKeys = Object.keys(dbGames);
-    if (pinKeys.length === 0) {
-      gamesList.innerHTML = "<p>Nenhum jogo (PIN) cadastrado.</p>";
-    } else {
-      pinKeys.forEach(pin => {
-        const game = dbGames[pin];
-        const count = game.phases ? game.phases.length : 0;
-        const div = document.createElement("div");
-        div.className = "class-list-item";
-        div.innerHTML = `
+    Object.keys(dbGames).forEach(pin => {
+      const g = dbGames[pin];
+      gamesList.innerHTML += `
+        <div class="class-list-item">
           <div>
-            <strong>PIN: ${pin}</strong> - Turma: ${game.className} (${count} Fases)
+            <strong>PIN: ${pin}</strong> - Turma: ${g.className} (${g.phases ? g.phases.length : 0} fases)
           </div>
-          <button class="btn btn-danger btn-small" onclick="deleteGame('${pin}')">Excluir Jogo</button>
-        `;
-        gamesList.appendChild(div);
-      });
-    }
+          <button class="btn btn-danger btn-small" onclick="deleteGame('${pin}')">Excluir PIN</button>
+        </div>
+      `;
+    });
 
     const bankList = document.getElementById("bank-phases-list");
     bankList.innerHTML = "";
-
-    if (dbPhaseBank.length === 0) {
-      bankList.innerHTML = "<p>Nenhuma fase no banco.</p>";
-    } else {
-      dbPhaseBank.forEach((p, index) => {
-        const div = document.createElement("div");
-        div.className = "class-list-item";
-        div.innerHTML = `
+    dbPhaseBank.forEach((p, idx) => {
+      bankList.innerHTML += `
+        <div class="class-list-item">
           <div>
-            <strong>${p.title}</strong> - (${p.syllablesCount || 2} Sílabas)
+            <strong>${p.title}</strong> (${p.syllablesCount} Sílabas, ${p.words ? p.words.length : 0} palavras)
           </div>
-          <button class="btn btn-danger btn-small" onclick="deletePhaseFromBank(${index})">Excluir do Banco</button>
-        `;
-        bankList.appendChild(div);
-      });
-    }
+          <button class="btn btn-danger btn-small" onclick="deletePhaseFromBank(${idx})">Excluir Fase</button>
+        </div>
+      `;
+    });
   }
 
   function deleteGame(pin) {
-    if (confirm(`Tem certeza que deseja excluir o jogo com PIN ${pin}?`)) {
+    if (confirm(`Deseja excluir o PIN ${pin}?`)) {
       delete dbGames[pin];
       localStorage.setItem("syllable_games", JSON.stringify(dbGames));
       renderManageGamesAndPhases();
     }
   }
 
-  function deletePhaseFromBank(index) {
-    if (confirm("Tem certeza que deseja excluir esta fase do banco de dados?")) {
-      dbPhaseBank.splice(index, 1);
+  function deletePhaseFromBank(idx) {
+    if (confirm("Deseja excluir esta fase do banco?")) {
+      dbPhaseBank.splice(idx, 1);
       localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
       renderManageGamesAndPhases();
     }
   }
 
   function loadAllDefaultPhases() {
-    if (confirm("Deseja restaurar/carregar as 18 fases padrão para o Banco de Fases?")) {
-      dbPhaseBank = [...DEFAULT_PHASES];
-      localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
-      renderManageGamesAndPhases();
-      alert("Fases padrão restauradas com sucesso!");
-    }
+    dbPhaseBank = [...DEFAULT_PHASES];
+    localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
+    alert("18 Fases originais restauradas!");
+    renderManageGamesAndPhases();
   }
 
   function resetAllData() {
-    if (confirm("ATENÇÃO: Isto apagará todos os cadastros, PINs, rankings e restaurará o estado inicial. Continuar?")) {
+    if (confirm("Tem certeza que deseja limpar tudo e resetar aos dados padrão?")) {
       localStorage.clear();
-      dbClasses = ["Infantil V", "1º Ano A", "1º Ano B"];
-      dbPhaseBank = DEFAULT_PHASES;
+      dbPhaseBank = [...DEFAULT_PHASES];
       dbGames = Object.assign({}, DEFAULT_GAMES);
-      localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
-      localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
-      localStorage.setItem("syllable_games", JSON.stringify(dbGames));
-      updateClassDropdown();
+      dbClasses = ["Infantil V", "1º Ano A", "1º Ano B"];
+      alert("Dados resetados com sucesso!");
       renderManageGamesAndPhases();
-      alert("Todos os dados foram resetados com sucesso.");
     }
   }
 
   function renderClassesList() {
     const list = document.getElementById("classes-list");
     list.innerHTML = "";
-
-    if (dbClasses.length === 0) {
-      list.innerHTML = "<p>Nenhuma turma cadastrada.</p>";
-      return;
-    }
-
-    dbClasses.forEach((c, index) => {
-      const div = document.createElement("div");
-      div.className = "class-list-item";
-      div.innerHTML = `
-        <span>${c}</span>
-        <button class="btn btn-danger btn-small" onclick="deleteClass(${index})">Excluir</button>
+    dbClasses.forEach((c, idx) => {
+      list.innerHTML += `
+        <div class="class-list-item">
+          <span>${c}</span>
+          <button class="btn btn-danger btn-small" onclick="deleteClass(${idx})">Excluir</button>
+        </div>
       `;
-      list.appendChild(div);
     });
   }
 
   function addNewClass() {
-    const name = document.getElementById("class-name-input").value.trim();
-    if (!name) {
-      alert("Digite o nome da turma!");
-      return;
-    }
-    if (dbClasses.includes(name)) {
-      alert("Esta turma já está cadastrada!");
-      return;
-    }
-
+    const input = document.getElementById("class-name-input");
+    const name = input.value.trim();
+    if (!name) return;
     dbClasses.push(name);
     localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
-    document.getElementById("class-name-input").value = "";
+    input.value = "";
     renderClassesList();
     updateClassDropdown();
   }
 
-  function deleteClass(index) {
-    if (confirm("Tem certeza que deseja excluir esta turma?")) {
-      dbClasses.splice(index, 1);
-      localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
-      renderClassesList();
-      updateClassDropdown();
-    }
+  function deleteClass(idx) {
+    dbClasses.splice(idx, 1);
+    localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
+    renderClassesList();
+    updateClassDropdown();
   }
 
-  function renderRankingTable() {
-    const filterSelect = document.getElementById("rank-filter-pin");
-    const pinKeys = Object.keys(dbGames);
-    
-    let optionsHtml = '<option value="ALL">Todos os PINs</option>';
-    pinKeys.forEach(p => {
-      optionsHtml += `<option value="${p}">${p} (${dbGames[p].className})</option>`;
-    });
-    filterSelect.innerHTML = optionsHtml;
+  async function renderRankingTable() {
+    const pinSelect = document.getElementById("rank-filter-pin");
+    let rankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
 
-    const selectedFilter = filterSelect.value || "ALL";
-    const rankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
+    // Tenta carregar os rankings do Supabase
+    try {
+      const { data, error } = await _supabase.from('rankings').select('*');
+      if (data && data.length > 0) {
+        rankings = data;
+      }
+    } catch (e) {
+      console.log("Usando ranking local.");
+    }
+
+    if (pinSelect.options.length === 0) {
+      pinSelect.innerHTML = '<option value="ALL">Todos os PINs</option>';
+      const pins = [...new Set(rankings.map(r => r.pin))];
+      pins.forEach(p => pinSelect.innerHTML += `<option value="${p}">${p}</option>`);
+    }
+
+    const selectedPin = pinSelect.value;
     const tableBody = document.getElementById("ranking-table-body");
     tableBody.innerHTML = "";
 
-    let filteredRankings = rankings;
-    if (selectedFilter !== "ALL") {
-      filteredRankings = rankings.filter(r => r.pin === selectedFilter);
-    }
+    const filtered = selectedPin === "ALL" ? rankings : rankings.filter(r => r.pin === selectedPin);
+    filtered.sort((a, b) => b.score - a.score);
 
-    filteredRankings.sort((a, b) => b.score - a.score);
-
-    if (filteredRankings.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="6">Nenhum resultado registrado ainda.</td></tr>';
-      return;
-    }
-
-    filteredRankings.forEach((r, idx) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td><strong>#${idx + 1}</strong></td>
-        <td>${r.student}</td>
-        <td>${r.className || "-"}</td>
-        <td><span class="badge" style="background:#8e44ad;">${r.pin}</span></td>
-        <td><strong>${r.score}</strong> acertos</td>
-        <td>${r.date}</td>
+    filtered.forEach((r, idx) => {
+      tableBody.innerHTML += `
+        <tr>
+          <td><strong>${idx + 1}º</strong></td>
+          <td>${r.student}</td>
+          <td>${r.className || '-'}</td>
+          <td>${r.pin}</td>
+          <td><strong>${r.score}</strong></td>
+          <td>${r.date}</td>
+        </tr>
       `;
-      tableBody.appendChild(tr);
     });
   }
 </script>
