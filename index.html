@@ -250,8 +250,7 @@
   // CONFIGURAÇÃO DO SUPABASE
   const SUPABASE_URL = 'https://vvhgaryqqhuvsbodpzmq.supabase.co';
   
-  // IMPORTANTE: Substitua todo o texto dentro das aspas abaixo pela sua chave 'anon public'
-  // A chave correta é um código longo que DEVE começar com "eyJ..."
+  // Substitua a string abaixo pela sua chave anon public (começa com eyJ...)
   const SUPABASE_ANON_KEY = 'sb_publishable_GtMSaV2ddUbbWEMpAvrk4Q_FVT9VXFO';
   
   const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -465,7 +464,6 @@
     const searchPin = String(rawPin).toUpperCase();
     let activeGame = dbGames[searchPin];
 
-    // Busca no Supabase caso não esteja local
     if (!activeGame) {
       try {
         const { data, error } = await _supabase
@@ -665,12 +663,10 @@
       date: new Date().toLocaleString("pt-BR")
     };
 
-    // Salva localmente
     let currentRankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
     currentRankings.push(rankingEntry);
     localStorage.setItem("syllable_rankings", JSON.stringify(currentRankings));
 
-    // Envia ao Supabase
     try {
       await _supabase.from('rankings').insert([rankingEntry]);
     } catch (e) {
@@ -709,103 +705,125 @@
   function updateClassDropdown() {
     const select = document.getElementById("new-game-class");
     select.innerHTML = "";
-    if (dbClasses.length === 0) {
-      select.innerHTML = '<option value="">Nenhuma turma cadastrada</option>';
-      return;
-    }
     dbClasses.forEach(c => {
       select.innerHTML += `<option value="${c}">${c}</option>`;
     });
   }
 
   function renderAdminForm() {
-    const typeSelect = document.getElementById("phase-type-select").value;
+    const count = parseInt(document.getElementById("phase-type-select").value);
     const container = document.getElementById("words-form-container");
     container.innerHTML = "";
 
-    const exampleSyl = typeSelect === "3" ? "PI-PO-CA" : "SA-PO";
+    for (let w = 1; w <= 4; w++) {
+      let syllablesInputs = "";
+      for (let s = 1; s <= count; s++) {
+        syllablesInputs += `
+          <input type="text" id="w${w}-syl${s}" placeholder="Sílaba ${s}" style="text-transform:uppercase; margin-bottom:5px;">
+        `;
+      }
 
-    for (let i = 0; i < 4; i++) {
-      const card = document.createElement("div");
-      card.className = "phase-card";
-      card.innerHTML = `
-        <h4>Palavra ${i + 1} (${typeSelect} Sílabas)</h4>
-        <div class="input-group">
-          <label>Caminho da Imagem no GitHub (Ex: imagens/palavra.png):</label>
-          <input type="text" class="admin-img-path" placeholder="imagens/exemplo.png">
-        </div>
-        <div class="input-group">
-          <label>Sílabas Corretas (separadas por hífen, ex: ${exampleSyl}):</label>
-          <input type="text" class="admin-correct-syl" placeholder="Ex: ${exampleSyl}">
-        </div>
-        <div class="input-group">
-          <label>Sílabas Incorretas/Distratores (separadas por vírgula):</label>
-          <input type="text" class="admin-wrong-syl" placeholder="Ex: TE, FA">
+      container.innerHTML += `
+        <div class="phase-card">
+          <h4>Palavra ${w}</h4>
+          <div class="input-group">
+            <label>Nome Completo da Palavra:</label>
+            <input type="text" id="w${w}-name" placeholder="Ex: CANETA">
+          </div>
+          <div class="input-group">
+            <label>Sílabas da Palavra (${count} Sílabas):</label>
+            ${syllablesInputs}
+          </div>
+          <div class="input-group">
+            <label>2 Sílabas Incorretas (Distratores/Opções Falsas):</label>
+            <div style="display:flex; gap:10px;">
+              <input type="text" id="w${w}-opt1" placeholder="Opção Falsa 1" style="text-transform:uppercase;">
+              <input type="text" id="w${w}-opt2" placeholder="Opção Falsa 2" style="text-transform:uppercase;">
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Caminho/URL da Imagem:</label>
+            <input type="text" id="w${w}-img" placeholder="imagens/exemplo.png">
+          </div>
         </div>
       `;
-      container.appendChild(card);
     }
   }
 
-  async function saveNewPhaseToBank() {
-    const title = document.getElementById("phase-title-input").value.trim();
-    const sylCount = parseInt(document.getElementById("phase-type-select").value);
-    
-    if (!title) {
-      alert("Preencha o título da fase!");
+  function saveNewPhaseToBank() {
+    const count = parseInt(document.getElementById("phase-type-select").value);
+    const titleInput = document.getElementById("phase-title-input").value.trim();
+
+    if (!titleInput) {
+      alert("Por favor, dê um título/nome para esta fase!");
       return;
     }
 
-    const cards = document.querySelectorAll(".phase-card");
-    const words = [];
+    const newWords = [];
+    for (let w = 1; w <= 4; w++) {
+      const name = document.getElementById(`w${w}-name`).value.trim().toUpperCase();
+      const img = document.getElementById(`w${w}-img`).value.trim();
+      const opt1 = document.getElementById(`w${w}-opt1`).value.trim().toUpperCase();
+      const opt2 = document.getElementById(`w${w}-opt2`).value.trim().toUpperCase();
 
-    for (let card of cards) {
-      const img = card.querySelector(".admin-img-path").value.trim();
-      const correctRaw = card.querySelector(".admin-correct-syl").value.trim();
-      const wrongRaw = card.querySelector(".admin-wrong-syl").value.trim();
+      const syllables = [];
+      for (let s = 1; s <= count; s++) {
+        const syl = document.getElementById(`w${w}-syl${s}`).value.trim().toUpperCase();
+        if (syl) syllables.push(syl);
+      }
 
-      const syllables = correctRaw.split("-").map(s => s.trim().toUpperCase()).filter(s => s !== "");
-      const options = wrongRaw.split(",").map(s => s.trim().toUpperCase()).filter(s => s !== "");
-
-      if (syllables.length !== sylCount) {
-        alert(`Cada palavra deve ter exatamente ${sylCount} sílabas separadas por hífen!`);
+      if (!name || syllables.length < count) {
+        alert(`Preencha todos os campos da Palavra ${w}!`);
         return;
       }
 
-      words.push({ name: syllables.join(""), syllables, options, img });
+      newWords.push({
+        name,
+        syllables,
+        options: [opt1, opt2].filter(Boolean),
+        img: img || "https://cdn-icons-png.flaticon.com/512/2405/2405479.png"
+      });
     }
 
     const newPhase = {
       id: "phase_" + Date.now(),
-      title,
-      syllablesCount: sylCount,
-      words
+      title: `${titleInput} (${count} Sílabas)`,
+      syllablesCount: count,
+      words: newWords
     };
 
     dbPhaseBank.push(newPhase);
     localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
-    
-    alert("Fase salva no banco de dados com sucesso!");
+
+    alert("Fase cadastrada no Banco com sucesso!");
     document.getElementById("phase-title-input").value = "";
     renderAdminForm();
   }
 
   function renderAvailablePhasesCheckboxes() {
+    const filterType = document.getElementById("filter-phase-type").value;
     const container = document.getElementById("available-phases-checkboxes");
-    const filter = document.getElementById("filter-phase-type").value;
     container.innerHTML = "";
 
-    dbPhaseBank.forEach(p => {
-      if (filter !== "ALL" && p.syllablesCount.toString() !== filter) return;
+    const filtered = dbPhaseBank.filter(p => {
+      if (filterType === "2") return p.syllablesCount === 2 || !p.syllablesCount;
+      if (filterType === "3") return p.syllablesCount === 3;
+      return true;
+    });
 
-      const item = document.createElement("label");
-      item.className = "checkbox-item";
-      item.innerHTML = `
-        <input type="checkbox" value="${p.id}" class="phase-checkbox">
-        <span>${p.title}</span>
-        <span class="type-tag">${p.syllablesCount} Sílabas</span>
+    if (filtered.length === 0) {
+      container.innerHTML = "<p style='color:#7f8c8d;'>Nenhuma fase encontrada para este filtro.</p>";
+      return;
+    }
+
+    filtered.forEach(p => {
+      const count = p.syllablesCount || 2;
+      container.innerHTML += `
+        <label class="checkbox-item">
+          <input type="checkbox" value="${p.id}" class="phase-checkbox" checked>
+          <span>${p.title} <span class="type-tag">${count} Sílabas</span></span>
+        </label>
       `;
-      container.appendChild(item);
     });
   }
 
@@ -817,118 +835,128 @@
   }
 
   async function createGameWithSelectedPhases() {
-    const pin = document.getElementById("new-pin").value.trim().toUpperCase();
+    const rawPin = document.getElementById("new-pin").value.trim();
     const className = document.getElementById("new-game-class").value;
 
-    if (!pin) {
-      alert("Digite um PIN válido para o jogo!");
+    if (!rawPin) {
+      alert("Digite um PIN para o jogo!");
       return;
     }
 
-    const checkboxes = document.querySelectorAll(".phase-checkbox:checked");
-    if (checkboxes.length === 0) {
-      alert("Selecione pelo menos uma fase para o jogo!");
+    const pin = rawPin.toUpperCase();
+    const selectedIds = Array.from(document.querySelectorAll(".phase-checkbox:checked")).map(cb => cb.value);
+
+    if (selectedIds.length === 0) {
+      alert("Selecione pelo menos uma fase!");
       return;
     }
 
-    const selectedIds = Array.from(checkboxes).map(c => c.value);
     const selectedPhases = dbPhaseBank.filter(p => selectedIds.includes(p.id));
-
     const gameData = { className, phases: selectedPhases };
 
-    // Salva Localmente
     dbGames[pin] = gameData;
     localStorage.setItem("syllable_games", JSON.stringify(dbGames));
 
-    // Salva no Supabase na Nuvem
+    // Salva no Supabase
     try {
-      const { error } = await _supabase
-        .from('jogos')
-        .insert([{ pin: pin, dados: gameData }]);
-
-      if (error) {
-        console.log("Erro no Supabase, salvo localmente:", error.message);
-      }
+      await _supabase.from('jogos').upsert([{ pin, dados: gameData }], { onConflict: 'pin' });
     } catch (e) {
-      console.log("Serviço offline, salvo localmente.");
+      console.log("Erro de salvamento na nuvem.");
     }
 
-    alert(`Jogo criado com sucesso com o PIN: ${pin}!`);
+    alert(`Jogo criado com sucesso! PIN: ${pin} | Turma: ${className}`);
     document.getElementById("new-pin").value = "";
   }
 
   function renderManageGamesAndPhases() {
-    const gamesList = document.getElementById("games-manage-list");
-    gamesList.innerHTML = "";
+    const gamesContainer = document.getElementById("games-manage-list");
+    gamesContainer.innerHTML = "";
 
-    Object.keys(dbGames).forEach(pin => {
-      const g = dbGames[pin];
-      gamesList.innerHTML += `
-        <div class="class-list-item">
-          <div>
-            <strong>PIN: ${pin}</strong> - Turma: ${g.className} (${g.phases ? g.phases.length : 0} fases)
+    const pinKeys = Object.keys(dbGames);
+    if (pinKeys.length === 0) {
+      gamesContainer.innerHTML = "<p>Nenhum jogo/PIN cadastrado.</p>";
+    } else {
+      pinKeys.forEach(p => {
+        const g = dbGames[p];
+        gamesContainer.innerHTML += `
+          <div class="class-list-item">
+            <div>
+              <strong>PIN: ${p}</strong> — Turma: ${g.className} (${(g.phases || []).length} fases)
+            </div>
+            <button class="btn btn-danger btn-small" onclick="deleteGame('${p}')">Excluir PIN</button>
           </div>
-          <button class="btn btn-danger btn-small" onclick="deleteGame('${pin}')">Excluir PIN</button>
-        </div>
-      `;
-    });
+        `;
+      });
+    }
 
-    const bankList = document.getElementById("bank-phases-list");
-    bankList.innerHTML = "";
+    const bankContainer = document.getElementById("bank-phases-list");
+    bankContainer.innerHTML = "";
+
     dbPhaseBank.forEach((p, idx) => {
-      bankList.innerHTML += `
+      const count = p.syllablesCount || 2;
+      bankContainer.innerHTML += `
         <div class="class-list-item">
           <div>
-            <strong>${p.title}</strong> (${p.syllablesCount} Sílabas, ${p.words ? p.words.length : 0} palavras)
+            <strong>${p.title}</strong> <span class="type-tag">${count} Sílabas</span> (${p.words.length} palavras)
           </div>
-          <button class="btn btn-danger btn-small" onclick="deletePhaseFromBank(${idx})">Excluir Fase</button>
+          <button class="btn btn-danger btn-small" onclick="deletePhaseFromBank(${idx})">Remover</button>
         </div>
       `;
     });
   }
 
-  function deleteGame(pin) {
-    if (confirm(`Deseja excluir o PIN ${pin}?`)) {
+  async function deleteGame(pin) {
+    if (confirm(`Tem certeza que deseja excluir o jogo PIN ${pin}?`)) {
       delete dbGames[pin];
       localStorage.setItem("syllable_games", JSON.stringify(dbGames));
+
+      try {
+        await _supabase.from('jogos').delete().eq('pin', pin);
+      } catch (e) {
+        console.log("Erro ao remover no Supabase.");
+      }
+
       renderManageGamesAndPhases();
     }
   }
 
-  function deletePhaseFromBank(idx) {
-    if (confirm("Deseja excluir esta fase do banco?")) {
-      dbPhaseBank.splice(idx, 1);
+  function deletePhaseFromBank(index) {
+    if (confirm("Deseja remover esta fase do Banco de Fases?")) {
+      dbPhaseBank.splice(index, 1);
       localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
       renderManageGamesAndPhases();
     }
   }
 
   function loadAllDefaultPhases() {
-    dbPhaseBank = [...DEFAULT_PHASES];
-    localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
-    alert("18 Fases originais restauradas!");
-    renderManageGamesAndPhases();
+    if (confirm("Isso carregará/restaurará as 18 fases padrão no seu banco. Continuar?")) {
+      dbPhaseBank = [...DEFAULT_PHASES];
+      localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
+      renderManageGamesAndPhases();
+      alert("18 Fases Padrão carregadas!");
+    }
   }
 
   function resetAllData() {
-    if (confirm("Tem certeza que deseja limpar tudo e resetar aos dados padrão?")) {
+    if (confirm("⚠️ Tem certeza que deseja APAGAR TODOS os dados locais (turmas, fases e jogos)?")) {
       localStorage.clear();
-      dbPhaseBank = [...DEFAULT_PHASES];
-      dbGames = Object.assign({}, DEFAULT_GAMES);
       dbClasses = ["Infantil V", "1º Ano A", "1º Ano B"];
-      alert("Dados resetados com sucesso!");
+      dbPhaseBank = DEFAULT_PHASES;
+      dbGames = DEFAULT_GAMES;
       renderManageGamesAndPhases();
+      alert("Dados locais resetados!");
     }
   }
 
   function renderClassesList() {
     const list = document.getElementById("classes-list");
     list.innerHTML = "";
+
     dbClasses.forEach((c, idx) => {
       list.innerHTML += `
         <div class="class-list-item">
           <span>${c}</span>
-          <button class="btn btn-danger btn-small" onclick="deleteClass(${idx})">Excluir</button>
+          <button class="btn btn-danger btn-small" onclick="removeClass(${idx})">Remover</button>
         </div>
       `;
     });
@@ -937,7 +965,12 @@
   function addNewClass() {
     const input = document.getElementById("class-name-input");
     const name = input.value.trim();
-    if (!name) return;
+
+    if (!name) {
+      alert("Digite o nome da turma!");
+      return;
+    }
+
     dbClasses.push(name);
     localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
     input.value = "";
@@ -945,18 +978,20 @@
     updateClassDropdown();
   }
 
-  function deleteClass(idx) {
-    dbClasses.splice(idx, 1);
-    localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
-    renderClassesList();
-    updateClassDropdown();
+  function removeClass(index) {
+    if (confirm("Deseja remover esta turma?")) {
+      dbClasses.splice(index, 1);
+      localStorage.setItem("syllable_classes", JSON.stringify(dbClasses));
+      renderClassesList();
+      updateClassDropdown();
+    }
   }
 
   async function renderRankingTable() {
     const pinSelect = document.getElementById("rank-filter-pin");
     let rankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
 
-    // Tenta carregar os rankings do Supabase
+    // Tenta buscar o ranking completo do Supabase
     try {
       const { data, error } = await _supabase.from('rankings').select('*');
       if (data && data.length > 0) {
@@ -966,11 +1001,20 @@
       console.log("Usando ranking local.");
     }
 
-    if (pinSelect.options.length === 0) {
-      pinSelect.innerHTML = '<option value="ALL">Todos os PINs</option>';
-      const pins = [...new Set(rankings.map(r => r.pin))];
-      pins.forEach(p => pinSelect.innerHTML += `<option value="${p}">${p}</option>`);
-    }
+    // Guarda a opção de filtro atual antes de recarregar a lista de opções
+    const currentValue = pinSelect.value || "ALL";
+
+    // Reúne todos os PINs cadastrados nos jogos + todos os PINs com jogadas registradas no ranking
+    const allPinsInGames = Object.keys(dbGames);
+    const allPinsInRankings = rankings.map(r => r.pin);
+    const uniquePins = [...new Set([...allPinsInGames, ...allPinsInRankings])].filter(Boolean);
+
+    pinSelect.innerHTML = '<option value="ALL">Todos os PINs</option>';
+    uniquePins.forEach(p => {
+      pinSelect.innerHTML += `<option value="${p}">${p}</option>`;
+    });
+
+    pinSelect.value = uniquePins.includes(currentValue) ? currentValue : "ALL";
 
     const selectedPin = pinSelect.value;
     const tableBody = document.getElementById("ranking-table-body");
@@ -978,6 +1022,11 @@
 
     const filtered = selectedPin === "ALL" ? rankings : rankings.filter(r => r.pin === selectedPin);
     filtered.sort((a, b) => b.score - a.score);
+
+    if (filtered.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="6" style="color:#7f8c8d;">Nenhuma pontuação registrada para este PIN.</td></tr>`;
+      return;
+    }
 
     filtered.forEach((r, idx) => {
       tableBody.innerHTML += `
