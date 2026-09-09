@@ -114,9 +114,10 @@
       <button class="btn btn-success" onclick="showAdminTab('ranking')">📊 Ranking</button>
     </div>
 
-    <!-- TAB 1: Cadastrar Nova Fase -->
+    <!-- TAB 1: Cadastrar/Editar Fase -->
     <div id="admin-tab-create-phase">
-      <h3>1. Cadastrar Fase no Banco de Dados</h3>
+      <h3 id="phase-form-title">1. Cadastrar Fase no Banco de Dados</h3>
+      <input type="hidden" id="editing-phase-id" value="">
       
       <div class="input-group">
         <label>Tipo de Fase (Quantidade de Sílabas):</label>
@@ -132,7 +133,10 @@
       </div>
 
       <div id="words-form-container"></div>
-      <button class="btn btn-success" onclick="saveNewPhaseToBank()">Salvar Fase no Banco</button>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-success" id="btn-save-phase" onclick="saveNewPhaseToBank()">Salvar Fase no Banco</button>
+        <button class="btn btn-secondary" id="btn-cancel-edit" onclick="cancelPhaseEdit()" style="display:none;">Cancelar Edição</button>
+      </div>
     </div>
 
     <!-- TAB 2: Criar Jogo / Associar Fases a uma Turma -->
@@ -752,12 +756,16 @@
 
   function saveNewPhaseToBank() {
     const count = parseInt(document.getElementById("phase-type-select").value);
-    const titleInput = document.getElementById("phase-title-input").value.trim();
+    const rawTitle = document.getElementById("phase-title-input").value.trim();
+    const editingId = document.getElementById("editing-phase-id").value;
 
-    if (!titleInput) {
+    if (!rawTitle) {
       alert("Por favor, dê um título/nome para esta fase!");
       return;
     }
+
+    // Remove redundância se a string já contiver "(X Sílabas)"
+    const cleanTitle = rawTitle.replace(/\s*\(\d+\s*Sílabas\)/gi, '').trim();
 
     const newWords = [];
     for (let w = 1; w <= 4; w++) {
@@ -785,17 +793,93 @@
       });
     }
 
-    const newPhase = {
-      id: "phase_" + Date.now(),
-      title: `${titleInput} (${count} Sílabas)`,
-      syllablesCount: count,
-      words: newWords
-    };
+    if (editingId) {
+      // Edição de fase existente
+      const index = dbPhaseBank.findIndex(p => p.id === editingId);
+      if (index !== -1) {
+        dbPhaseBank[index] = {
+          id: editingId,
+          title: `${cleanTitle} (${count} Sílabas)`,
+          syllablesCount: count,
+          words: newWords
+        };
+        
+        // Atualiza a fase em jogos/PINs onde ela esteja vinculada
+        Object.keys(dbGames).forEach(pin => {
+          if (dbGames[pin].phases) {
+            const pIndex = dbGames[pin].phases.findIndex(p => p.id === editingId);
+            if (pIndex !== -1) {
+              dbGames[pin].phases[pIndex] = dbPhaseBank[index];
+            }
+          }
+        });
+        localStorage.setItem("syllable_games", JSON.stringify(dbGames));
+      }
+      alert("Fase atualizada com sucesso!");
+    } else {
+      // Criação de nova fase
+      const newPhase = {
+        id: "phase_" + Date.now(),
+        title: `${cleanTitle} (${count} Sílabas)`,
+        syllablesCount: count,
+        words: newWords
+      };
+      dbPhaseBank.push(newPhase);
+      alert("Fase cadastrada no Banco com sucesso!");
+    }
 
-    dbPhaseBank.push(newPhase);
     localStorage.setItem("syllable_phases", JSON.stringify(dbPhaseBank));
+    cancelPhaseEdit();
+  }
 
-    alert("Fase cadastrada no Banco com sucesso!");
+  function editPhaseFromBank(index) {
+    const phase = dbPhaseBank[index];
+    if (!phase) return;
+
+    document.getElementById("editing-phase-id").value = phase.id;
+    document.getElementById("phase-form-title").innerText = "✏️ Editar Fase";
+    document.getElementById("btn-save-phase").innerText = "Atualizar Fase";
+    document.getElementById("btn-cancel-edit").style.display = "inline-block";
+
+    const typeSelect = document.getElementById("phase-type-select");
+    const count = phase.syllablesCount || 2;
+    typeSelect.value = count;
+
+    // Preenche o formulário para a quantidade correta de sílabas
+    renderAdminForm();
+
+    // Limpa o título tirando o sufixo "(X Sílabas)" para edição
+    document.getElementById("phase-title-input").value = phase.title.replace(/\s*\(\d+\s*Sílabas\)/gi, '').trim();
+
+    // Preenche os dados de cada palavra
+    phase.words.forEach((w, wIdx) => {
+      const wNum = wIdx + 1;
+      const nameInput = document.getElementById(`w${w}-name`);
+      const imgInput = document.getElementById(`w${w}-img`);
+      const opt1Input = document.getElementById(`w${w}-opt1`);
+      const opt2Input = document.getElementById(`w${w}-opt2`);
+
+      if (nameInput) nameInput.value = w.name || "";
+      if (imgInput) imgInput.value = w.img || "";
+      if (opt1Input) opt1Input.value = (w.options && w.options[0]) || "";
+      if (opt2Input) opt2Input.value = (w.options && w.options[1]) || "";
+
+      if (w.syllables) {
+        w.syllables.forEach((syl, sIdx) => {
+          const sylInput = document.getElementById(`w${wNum}-syl${sIdx + 1}`);
+          if (sylInput) sylInput.value = syl;
+        });
+      }
+    });
+
+    showAdminTab('create-phase');
+  }
+
+  function cancelPhaseEdit() {
+    document.getElementById("editing-phase-id").value = "";
+    document.getElementById("phase-form-title").innerText = "1. Cadastrar Fase no Banco de Dados";
+    document.getElementById("btn-save-phase").innerText = "Salvar Fase no Banco";
+    document.getElementById("btn-cancel-edit").style.display = "none";
     document.getElementById("phase-title-input").value = "";
     renderAdminForm();
   }
@@ -899,7 +983,10 @@
           <div>
             <strong>${p.title}</strong> <span class="type-tag">${count} Sílabas</span> (${p.words.length} palavras)
           </div>
-          <button class="btn btn-danger btn-small" onclick="deletePhaseFromBank(${idx})">Remover</button>
+          <div>
+            <button class="btn btn-warning btn-small" style="margin-right: 5px;" onclick="editPhaseFromBank(${idx})">Editar</button>
+            <button class="btn btn-danger btn-small" onclick="deletePhaseFromBank(${idx})">Remover</button>
+          </div>
         </div>
       `;
     });
