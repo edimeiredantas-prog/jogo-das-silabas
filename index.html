@@ -255,7 +255,7 @@
   const SUPABASE_URL = 'https://vvhgaryqqhuvsbodpzmq.supabase.co';
   
   // Substitua a string abaixo pela sua chave anon public (começa com eyJ...)
-  const SUPABASE_ANON_KEY = 'sb_publishable_GtMSaV2ddUbbWEMpAvrk4Q_FVT9VXFO';
+  const SUPABASE_ANON_KEY = 'SUA_CHAVE_ANON_AQUI_COMECANDO_COM_EYJ';
   
   const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -354,7 +354,7 @@
     {
       id: "phase_11", title: "Fase 11 (2 Sílabas)", syllablesCount: 2,
       words: [
-        { name: "IOIÔ", syllables: ["IO", "IÔ"], options: ["OI", "IA"], img: "imagens/ioio.png" },
+        { name: "IOIO", syllables: ["IO", "IO"], options: ["OI", "IA"], img: "imagens/ioio.png" },
         { name: "CASA", syllables: ["CA", "SA"], options: ["CE", "SE"], img: "imagens/casa.png" },
         { name: "SETE", syllables: ["SE", "TE"], options: ["FE", "RE"], img: "imagens/sete.png" },
         { name: "BEBÊ", syllables: ["BE", "BÊ"], options: ["BA", "BÁ"], img: "imagens/bebe.png" }
@@ -764,7 +764,6 @@
       return;
     }
 
-    // Remove redundância se a string já contiver "(X Sílabas)"
     const cleanTitle = rawTitle.replace(/\s*\(\d+\s*Sílabas\)/gi, '').trim();
 
     const newWords = [];
@@ -794,7 +793,6 @@
     }
 
     if (editingId) {
-      // Edição de fase existente
       const index = dbPhaseBank.findIndex(p => p.id === editingId);
       if (index !== -1) {
         dbPhaseBank[index] = {
@@ -804,7 +802,6 @@
           words: newWords
         };
         
-        // Atualiza a fase em jogos/PINs onde ela esteja vinculada
         Object.keys(dbGames).forEach(pin => {
           if (dbGames[pin].phases) {
             const pIndex = dbGames[pin].phases.findIndex(p => p.id === editingId);
@@ -817,7 +814,6 @@
       }
       alert("Fase atualizada com sucesso!");
     } else {
-      // Criação de nova fase
       const newPhase = {
         id: "phase_" + Date.now(),
         title: `${cleanTitle} (${count} Sílabas)`,
@@ -836,28 +832,31 @@
     const phase = dbPhaseBank[index];
     if (!phase) return;
 
+    // 1. Alterna para a aba de formulário
+    showAdminTab('create-phase');
+
+    // 2. Define o id em edição e ajusta títulos dos botões
     document.getElementById("editing-phase-id").value = phase.id;
     document.getElementById("phase-form-title").innerText = "✏️ Editar Fase";
     document.getElementById("btn-save-phase").innerText = "Atualizar Fase";
     document.getElementById("btn-cancel-edit").style.display = "inline-block";
 
+    // 3. Define a quantidade de sílabas e renderiza os campos do formulário primeiro
     const typeSelect = document.getElementById("phase-type-select");
     const count = phase.syllablesCount || 2;
     typeSelect.value = count;
-
-    // Preenche o formulário para a quantidade correta de sílabas
     renderAdminForm();
 
-    // Limpa o título tirando o sufixo "(X Sílabas)" para edição
+    // 4. Preenche o título da fase
     document.getElementById("phase-title-input").value = phase.title.replace(/\s*\(\d+\s*Sílabas\)/gi, '').trim();
 
-    // Preenche os dados de cada palavra
+    // 5. Preenche os dados nos campos recém-criados
     phase.words.forEach((w, wIdx) => {
       const wNum = wIdx + 1;
-      const nameInput = document.getElementById(`w${w}-name`);
-      const imgInput = document.getElementById(`w${w}-img`);
-      const opt1Input = document.getElementById(`w${w}-opt1`);
-      const opt2Input = document.getElementById(`w${w}-opt2`);
+      const nameInput = document.getElementById(`w${wNum}-name`);
+      const imgInput = document.getElementById(`w${wNum}-img`);
+      const opt1Input = document.getElementById(`w${wNum}-opt1`);
+      const opt2Input = document.getElementById(`w${wNum}-opt2`);
 
       if (nameInput) nameInput.value = w.name || "";
       if (imgInput) imgInput.value = w.img || "";
@@ -872,7 +871,8 @@
       }
     });
 
-    showAdminTab('create-phase');
+    // Rola suavemente até o formulário
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function cancelPhaseEdit() {
@@ -941,7 +941,6 @@
     dbGames[pin] = gameData;
     localStorage.setItem("syllable_games", JSON.stringify(dbGames));
 
-    // Salva no Supabase
     try {
       await _supabase.from('jogos').upsert([{ pin, dados: gameData }], { onConflict: 'pin' });
     } catch (e) {
@@ -1078,7 +1077,6 @@
     const pinSelect = document.getElementById("rank-filter-pin");
     let rankings = JSON.parse(localStorage.getItem("syllable_rankings")) || [];
 
-    // Tenta buscar o ranking completo do Supabase
     try {
       const { data, error } = await _supabase.from('rankings').select('*');
       if (data && data.length > 0) {
@@ -1088,10 +1086,8 @@
       console.log("Usando ranking local.");
     }
 
-    // Guarda a opção de filtro atual antes de recarregar a lista de opções
     const currentValue = pinSelect.value || "ALL";
 
-    // Reúne todos os PINs cadastrados nos jogos + todos os PINs com jogadas registradas no ranking
     const allPinsInGames = Object.keys(dbGames);
     const allPinsInRankings = rankings.map(r => r.pin);
     const uniquePins = [...new Set([...allPinsInGames, ...allPinsInRankings])].filter(Boolean);
