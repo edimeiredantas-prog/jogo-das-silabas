@@ -832,25 +832,20 @@
     const phase = dbPhaseBank[index];
     if (!phase) return;
 
-    // 1. Alterna para a aba de formulário
     showAdminTab('create-phase');
 
-    // 2. Define o id em edição e ajusta títulos dos botões
     document.getElementById("editing-phase-id").value = phase.id;
     document.getElementById("phase-form-title").innerText = "✏️ Editar Fase";
     document.getElementById("btn-save-phase").innerText = "Atualizar Fase";
     document.getElementById("btn-cancel-edit").style.display = "inline-block";
 
-    // 3. Define a quantidade de sílabas e renderiza os campos do formulário primeiro
     const typeSelect = document.getElementById("phase-type-select");
     const count = phase.syllablesCount || 2;
     typeSelect.value = count;
     renderAdminForm();
 
-    // 4. Preenche o título da fase
     document.getElementById("phase-title-input").value = phase.title.replace(/\s*\(\d+\s*Sílabas\)/gi, '').trim();
 
-    // 5. Preenche os dados nos campos recém-criados
     phase.words.forEach((w, wIdx) => {
       const wNum = wIdx + 1;
       const nameInput = document.getElementById(`w${wNum}-name`);
@@ -871,7 +866,6 @@
       }
     });
 
-    // Rola suavemente até o formulário
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -894,6 +888,9 @@
       if (filterType === "3") return p.syllablesCount === 3;
       return true;
     });
+
+    // Ordena as opções do filtro alfabeticamente/numericamente também
+    filtered.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' }));
 
     if (filtered.length === 0) {
       container.innerHTML = "<p style='color:#7f8c8d;'>Nenhuma fase encontrada para este filtro.</p>";
@@ -975,7 +972,12 @@
     const bankContainer = document.getElementById("bank-phases-list");
     bankContainer.innerHTML = "";
 
-    dbPhaseBank.forEach((p, idx) => {
+    // ORDENAÇÃO AUTOMÁTICA (Numérica e Alfabética)
+    const sortedPhasesWithOriginalIndex = dbPhaseBank
+      .map((p, idx) => ({ ...p, originalIndex: idx }))
+      .sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' }));
+
+    sortedPhasesWithOriginalIndex.forEach((p) => {
       const count = p.syllablesCount || 2;
       bankContainer.innerHTML += `
         <div class="class-list-item">
@@ -983,8 +985,8 @@
             <strong>${p.title}</strong> <span class="type-tag">${count} Sílabas</span> (${p.words.length} palavras)
           </div>
           <div>
-            <button class="btn btn-warning btn-small" style="margin-right: 5px;" onclick="editPhaseFromBank(${idx})">Editar</button>
-            <button class="btn btn-danger btn-small" onclick="deletePhaseFromBank(${idx})">Remover</button>
+            <button class="btn btn-warning btn-small" style="margin-right: 5px;" onclick="editPhaseFromBank(${p.originalIndex})">Editar</button>
+            <button class="btn btn-danger btn-small" onclick="deletePhaseFromBank(${p.originalIndex})">Remover</button>
           </div>
         </div>
       `;
